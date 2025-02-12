@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/NamespaceManager/internal/models"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,6 +30,8 @@ func InitDataBase() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to the database: %v", err)
 	}
+	// DB.Migrator().DropColumn(&models.GliderSpec{}, "ticket_id")
+	DB.AutoMigrate(&models.Namespace{}, &models.User{}, &models.GliderTicket{}, &models.GliderSpec{}, &models.SpecResource{})
 	return DB, nil
 }
 
