@@ -6,6 +6,7 @@ import (
 
 	"github.com/NamespaceManager/config"
 	"github.com/NamespaceManager/docs"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -20,10 +21,21 @@ type App struct {
 }
 
 func NewApp(postgresDB *gorm.DB) *App {
-	return &App{
+	app := &App{
 		gin:        gin.New(),
 		postgresDB: postgresDB,
 	}
+
+	// Configure CORS
+	app.gin.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // Change this to your frontend's URL
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
+	return app
 }
 
 func (s *App) Run() error {
