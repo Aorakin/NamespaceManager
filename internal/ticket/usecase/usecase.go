@@ -74,8 +74,7 @@ func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (*models.GliderTicket,
 	return ticket, nil
 }
 
-func (u *TicketUsecase) SendTicket(payload dtos.Payload) (int, []map[string]interface{}, error) {
-	url := "http://host.docker.internal:5000/api/v1/resourceunit"
+func (u *TicketUsecase) SendTicket(url string, payload interface{}) (int, []map[string]interface{}, error) {
 	status, body, err := u.TicketRepository.SendRequest(url, payload, "POST")
 	if err != nil {
 		return 0, nil, err

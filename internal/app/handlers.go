@@ -15,9 +15,9 @@ import (
 )
 
 func (a *App) MapHandlers() error {
-	ticketGroup := a.gin.Group("/ticket")
-	usersGroup := a.gin.Group("/users")
-	nsGroup := a.gin.Group("/ns")
+	ticketGroup := a.gin.RouterGroup.Group("/ticket")
+	usersGroup := a.gin.RouterGroup.Group("/users")
+	nsGroup := a.gin.RouterGroup.Group("/ns")
 
 	ticketRepository := ticketRepository.NewTicketRepository(a.postgresDB)
 	usersRepository := usersRepository.NewUsersRepository(a.postgresDB)

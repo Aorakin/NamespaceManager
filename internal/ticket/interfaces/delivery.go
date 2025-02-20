@@ -6,4 +6,5 @@ type TicketHandler interface {
 	HandleTicketCallback() gin.HandlerFunc
 	SendTicket() gin.HandlerFunc
 	GetMyTicket() gin.HandlerFunc
+	RequestTicket() gin.HandlerFunc
 }

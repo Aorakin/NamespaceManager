@@ -1,10 +1,12 @@
 package http
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/NamespaceManager/internal/users/dtos"
 	"github.com/NamespaceManager/internal/users/interfaces"
+	"github.com/NamespaceManager/internal/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -51,6 +53,10 @@ func (h *UsersHandlers) Register() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
 		}
+		if err := utils.CheckValidater(registerInput); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
+			return
+		}
 
 		if err := h.usersUsecase.Register(registerInput); err != nil {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -72,7 +78,12 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 
 		session := sessions.Default(c)
 		session.Set("userID", user.ID)
-		session.Save()
+		err = session.Save()
+		if err != nil {
+			log.Printf("Session save failed: %+v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"Session save failed": err.Error()})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 
@@ -81,21 +92,7 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 
 func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		session.Clear()
-		session.Save()
+		utils.ClearSession(c)
 		c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
-	}
-}
-
-func (h *UsersHandlers) TestSession() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		username := session.Get("userID")
-		if username == nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"message": "Welcome, " + username.(string)})
 	}
 }

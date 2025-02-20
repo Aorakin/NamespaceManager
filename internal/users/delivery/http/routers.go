@@ -1,7 +1,6 @@
 package http
 
 import (
-	"github.com/NamespaceManager/internal/middleware"
 	"github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/gin-gonic/gin"
 )
@@ -12,5 +11,4 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.GET("/register", usersHandler.Register())
 	usersGroup.POST("/login", usersHandler.Login())
 	usersGroup.POST("/logout", usersHandler.Logout())
-	usersGroup.GET("/testsession", middleware.AuthMiddleware(), usersHandler.TestSession())
 }

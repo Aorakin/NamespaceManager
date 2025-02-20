@@ -1,11 +1,13 @@
 package config
 
 import (
+	"encoding/gob"
 	"log"
 	"os"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -14,6 +16,8 @@ import (
 var GoogleOauthConfig *oauth2.Config
 
 func InitConfig() {
+	gob.Register(uuid.UUID{})
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)

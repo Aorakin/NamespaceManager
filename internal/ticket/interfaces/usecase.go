@@ -11,5 +11,5 @@ type TicketUsecase interface {
 	GetMyTicket(uuid.UUID, uuid.UUID) ([]dtos.TicketResponse, error)
 	SetPayload(*models.GliderTicket) (*dtos.Payload, error)
 	ApporveTicket(uuid.UUID) (*models.GliderTicket, error)
-	SendTicket(dtos.Payload) (int, []map[string]interface{}, error)
+	SendTicket(string, interface{}) (int, []map[string]interface{}, error)
 }
