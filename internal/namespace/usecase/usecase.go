@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/namespace/dtos"
 	"github.com/NamespaceManager/internal/namespace/interfaces"
@@ -51,4 +53,33 @@ func (u *NSUsecase) GetNSList(userID uuid.UUID) ([]dtos.NSresponse, error) {
 	}
 
 	return resp, nil
+}
+
+func (u *NSUsecase) Update(editNS dtos.ReqForEdit) error {
+	//ยังไม่ได้เช็คrole สำหรับการทำการupdate
+	namespace := &dtos.EditNS{
+		Priority: editNS.Priority,
+		Quota:    editNS.Quota,
+	}
+
+	return u.NsRepository.Update(editNS.ID, namespace, editNS.UserIDs)
+}
+
+func (u *NSUsecase) Delete(namespaceID uuid.UUID) error {
+	return u.NsRepository.Delete(namespaceID)
+}
+
+func (s *NSUsecase) AddUsersToNamespace(req dtos.UpdateNamespaceUsersReq) error {
+	if len(req.UserIDs) == 0 {
+		return fmt.Errorf("at least one user ID must be provided")
+	}
+	return s.NsRepository.AddUsersToNamespace(req.NamespaceID, req.UserIDs)
+}
+
+func (s *NSUsecase) RemoveUsersFromNamespace(req dtos.UpdateNamespaceUsersReq) error {
+	fmt.Println(req)
+	if len(req.UserIDs) == 0 {
+		return fmt.Errorf("at least one user ID must be provided")
+	}
+	return s.NsRepository.RemoveUsersFromNamespace(req.NamespaceID, req.UserIDs)
 }

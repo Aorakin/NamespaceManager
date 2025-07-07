@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/NamespaceManager/internal/middleware"
 	"github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/gin-gonic/gin"
 )
@@ -10,5 +11,5 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.GET("/auth/callback/google", usersHandler.Callback())
 	usersGroup.GET("/register", usersHandler.Register())
 	usersGroup.POST("/login", usersHandler.Login())
-	usersGroup.POST("/logout", usersHandler.Logout())
+	usersGroup.POST("/logout", usersHandler.Logout()).Use(middleware.AuthMiddleware())
 }
