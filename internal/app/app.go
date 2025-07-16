@@ -28,7 +28,7 @@ func NewApp(postgresDB *gorm.DB) *App {
 
 	// Configure CORS
 	app.gin.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Change this to your frontend's URL
+		AllowOrigins:     []string{"http://localhost:3000"}, // Change this to your frontend's URL
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
