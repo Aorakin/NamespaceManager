@@ -45,8 +45,8 @@ func (s *App) Run() error {
 	}
 
 	config.InitConfig()
-	store := config.NewSessionStore("ClearingHouseSession", 3600)
-	s.gin.RouterGroup.Use(sessions.Sessions("ClearingHouseSession", store))
+	store := config.NewSessionStore("attc[pci7>klk-UQ!/h^b{!^rK{1mAe", 3600)
+	s.gin.Use(sessions.Sessions("NSmanagerSession", store))
 
 	docs.SwaggerInfo.Title = "ClearingHouse API"
 	docs.SwaggerInfo.Version = "1.0"

@@ -9,7 +9,7 @@ import (
 
 type GliderSpec struct {
 	ID        uuid.UUID        `gorm:"type:uuid;primaryKey;not null" json:"id"`
-	TicketID  uuid.UUID        `gorm:"type:uuid;not null" json:"ticket_id"`
+	TicketID  uuid.UUID        `gorm:"type:uuid;not null" json:"-"`
 	Type      ResourceUnitType `gorm:"not null" json:"type"`
 	PoolID    uuid.UUID        `gorm:"not null" json:"pool_id"`
 	Resources []SpecResource   `gorm:"foreignKey:SpecID" json:"resource" validate:"required,min=1"`

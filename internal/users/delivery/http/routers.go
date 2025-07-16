@@ -11,6 +11,5 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.GET("/auth/callback/google", usersHandler.Callback())
 	usersGroup.GET("/register", usersHandler.Register())
 	usersGroup.POST("/login", usersHandler.Login())
-	usersGroup.POST("/logout", usersHandler.Logout())
-	usersGroup.GET("/testsession", middleware.AuthMiddleware(), usersHandler.TestSession())
+	usersGroup.POST("/logout", usersHandler.Logout()).Use(middleware.AuthMiddleware())
 }

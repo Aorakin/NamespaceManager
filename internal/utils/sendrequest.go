@@ -39,11 +39,3 @@ func SendRequest(url string, payload interface{}, method string) (int, []byte, e
 
 	return resp.StatusCode, body, nil
 }
-
-// func CheckValidater(i interface{}) error {
-// 	validate := validator.New()
-// 	if err := validate.Struct(i); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }

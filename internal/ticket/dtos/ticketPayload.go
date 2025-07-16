@@ -17,7 +17,6 @@ type Payload struct {
 }
 
 type RequestWithNS struct {
-	UserID      uuid.UUID `json:"user_id"`
 	NamespaceID uuid.UUID `json:"namespace_id"`
 }
 

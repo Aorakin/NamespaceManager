@@ -7,11 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// 1 ticket per glidelet
+type StatusTicket string
+
+const (
+	Ready    StatusTicket = "ready"
+	Pending  StatusTicket = "pending"
+	Active   StatusTicket = "active"
+	Inactive StatusTicket = "inactive"
+)
+
 type GliderTicket struct {
 	ID           uuid.UUID `gorm:"type:uuid;primaryKey;unique" json:"id"`
 	OwnerID      uuid.UUID `gorm:"type:uuid;not null" json:"owner_id"`
 	NamespaceID  uuid.UUID `gorm:"type:uuid;not null;index" json:"namespace_id"`
+	TaskID       uuid.UUID `gorm:"type:uuid" json:"task_id"`
 	NamespaceURN string    `gorm:"not null" json:"namespace_urn"`
 	GlideletURN  string    `gorm:"not null" json:"glidelet_urn" `
 
@@ -19,9 +28,10 @@ type GliderTicket struct {
 
 	ReferenceTicketID string `gorm:"not null" json:"reference_ticket_id"`
 
-	RedeemTimeout string `gorm:"not null" json:"redeem_timeout" validate:"required"`
-	Lease         string `gorm:"not null" json:"lease" validate:"required"`
-	Signature     string `gorm:"not null" json:"signature" validate:"required"`
+	RedeemTimeout string       `gorm:"not null" json:"redeem_timeout" validate:"required"`
+	Lease         string       `gorm:"not null" json:"lease" validate:"required"` //unit sec
+	Signature     string       `gorm:"not null" json:"signature" validate:"required"`
+	Status        StatusTicket `gorm:"not null;default:'ready'" json:"status" `
 }
 
 func (base *GliderTicket) BeforeCreate(tx *gorm.DB) (err error) {

@@ -31,7 +31,7 @@ func InitDataBase() (*gorm.DB, error) {
 		return nil, fmt.Errorf("could not connect to the database: %v", err)
 	}
 	// DB.Migrator().DropColumn(&models.GliderSpec{}, "ticket_id")
-	DB.AutoMigrate(&models.Namespace{}, &models.User{}, &models.GliderTicket{}, &models.GliderSpec{}, &models.SpecResource{})
+	DB.AutoMigrate(&models.Namespace{}, &models.User{}, &models.Tasks{}, &models.GliderTicket{}, &models.GliderSpec{}, &models.SpecResource{})
 	return DB, nil
 }
 
