@@ -46,6 +46,17 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 	}
 }
 
+// Register godoc
+// @Summary User registration
+// @Description Register a new user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body dtos.RegisterInput true "User registration data"
+// @Success 201 {object} map[string]string "User registered successfully"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 409 {object} map[string]string "User already exists"
+// @Router /users/register [get]
 func (h *UsersHandlers) Register() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var registerInput dtos.RegisterInput
@@ -66,6 +77,18 @@ func (h *UsersHandlers) Register() gin.HandlerFunc {
 	}
 }
 
+// Login godoc
+// @Summary User login
+// @Description Login with username and password
+// @Tags users
+// @Accept application/x-www-form-urlencoded
+// @Produce json
+// @Param username formData string true "Username"
+// @Param password formData string true "Password"
+// @Success 200 {object} map[string]string "Login successful"
+// @Failure 401 {object} map[string]string "Invalid credentials"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/login [post]
 func (h *UsersHandlers) Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
@@ -90,6 +113,14 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 	}
 }
 
+// Logout godoc
+// @Summary User logout
+// @Description Logout user and clear session
+// @Tags users
+// @Produce json
+// @Success 200 {object} map[string]string "Logout successful"
+// @Security ApiKeyAuth
+// @Router /users/logout [post]
 func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		utils.ClearSession(c)

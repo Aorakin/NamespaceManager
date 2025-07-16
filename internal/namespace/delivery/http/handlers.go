@@ -19,6 +19,18 @@ func NewNSHandler(NSUsecase interfaces.NSUsecase) interfaces.NSHandler {
 	return &NSHandlers{nsUsecase: NSUsecase}
 }
 
+// Create godoc
+// @Summary Create namespace
+// @Description Create a new namespace
+// @Tags namespaces
+// @Accept json
+// @Produce json
+// @Param namespace body dtos.RequestNS true "Namespace data"
+// @Success 200 {string} string "Namespace Created"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 409 {object} map[string]string "Conflict error"
+// @Security ApiKeyAuth
+// @Router /ns/nsCreate [post]
 func (h NSHandlers) Create() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req dtos.RequestNS
@@ -36,6 +48,15 @@ func (h NSHandlers) Create() gin.HandlerFunc {
 	}
 }
 
+// GetNSList godoc
+// @Summary Get namespace list
+// @Description Get list of namespaces for the authenticated user
+// @Tags namespaces
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of namespaces"
+// @Failure 409 {object} map[string]string "Conflict error"
+// @Security ApiKeyAuth
+// @Router /ns/nsList [get]
 func (h NSHandlers) GetNSList() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := utils.GetSession(c, "userID").(uuid.UUID)

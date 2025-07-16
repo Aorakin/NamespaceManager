@@ -1,4 +1,202 @@
+basePath: /
+definitions:
+  dtos.RegisterInput:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 30
+        minLength: 2
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  dtos.RequestNS:
+    properties:
+      priority:
+        type: string
+      project:
+        type: string
+      quota:
+        type: string
+      resource_unit_urn:
+        type: string
+      urn:
+        type: string
+    type: object
+host: localhost:8080
 info:
-  contact: {}
-paths: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Resource Allocation and Management in Multi-Cluster project
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: NamespaceManager API
+  version: "1.0"
+paths:
+  /ns/nsCreate:
+    post:
+      consumes:
+      - application/json
+      description: Create a new namespace
+      parameters:
+      - description: Namespace data
+        in: body
+        name: namespace
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RequestNS'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Namespace Created
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create namespace
+      tags:
+      - namespaces
+  /ns/nsList:
+    get:
+      description: Get list of namespaces for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of namespaces
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get namespace list
+      tags:
+      - namespaces
+  /users/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Login with username and password
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login
+      tags:
+      - users
+  /users/logout:
+    post:
+      description: Logout user and clear session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: User logout
+      tags:
+      - users
+  /users/register:
+    get:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: User already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User registration
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
