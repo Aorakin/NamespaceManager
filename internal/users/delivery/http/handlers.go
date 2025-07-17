@@ -95,7 +95,7 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 		password := c.PostForm("password")
 		user, err := h.usersUsecase.Login(username, password)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid username or password"})
 			return
 		}
 

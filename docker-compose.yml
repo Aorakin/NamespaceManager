@@ -29,7 +29,7 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL:  oak@gmail.com
+      PGADMIN_DEFAULT_EMAIL: oak@gmail.com
       PGADMIN_DEFAULT_PASSWORD: qwerty
     ports:
       - "5050:80"

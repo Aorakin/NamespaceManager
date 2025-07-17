@@ -22,17 +22,17 @@ func NewTicketHandler(ticketUsecase interfaces.TicketUsecase) interfaces.TicketH
 
 func (h *TicketHandlers) HandleTicketCallback() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var ticket models.GliderTicket
-		if err := c.ShouldBindJSON(&ticket); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		var ticketreq dtos.CreateTicket
+		if err := c.ShouldBindJSON(&ticketreq); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		if err := h.ticketUsecase.HandleTicketCallback(ticket); err != nil {
+		userid := utils.GetSession(c, "userID").(uuid.UUID)
+		if err := h.ticketUsecase.HandleTicketCallback(ticketreq, userid); err != nil {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusCreated, "Ticket Created")
+		c.JSON(http.StatusOK, "Ticket Created")
 	}
 }
 
@@ -209,6 +209,7 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc { // request ticket to 
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
 		}
+		// userID := utils.GetSession(c, "userID").(uuid.UUID)
 
 		url := "http://host.docker.internal:8989" //change url
 		status, jsonResponse, err := utils.SendRequest(url, ticketReq, "POST")
@@ -222,12 +223,12 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc { // request ticket to 
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
 			return
 		}
-		for _, ticket := range tickets {
-			if err := h.ticketUsecase.HandleTicketCallback(ticket); err != nil {
-				c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-				return
-			}
-		}
+		// for _, ticket := range tickets {
+		// 	if err := h.ticketUsecase.HandleTicketCallback(ticket, userID); err != nil {
+		// 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		// 		return
+		// 	}
+		// }
 		c.JSON(status, tickets)
 
 	}
