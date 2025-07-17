@@ -17,16 +17,16 @@ const (
 )
 
 type GliderTicket struct {
-	ID           uuid.UUID `gorm:"type:uuid;primaryKey;unique" json:"id"`
-	OwnerID      uuid.UUID `gorm:"type:uuid;not null" json:"owner_id"`
-	NamespaceID  uuid.UUID `gorm:"type:uuid;not null;index" json:"namespace_id"`
-	TaskID       uuid.UUID `gorm:"type:uuid" json:"task_id"`
-	NamespaceURN string    `gorm:"not null" json:"namespace_urn"`
-	GlideletURN  string    `gorm:"not null" json:"glidelet_urn" `
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;unique" json:"id"`
+	OwnerID      uuid.UUID  `gorm:"type:uuid;not null" json:"owner_id"`
+	NamespaceID  uuid.UUID  `gorm:"type:uuid;not null;index" json:"namespace_id"`
+	TaskID       *uuid.UUID `gorm:"type:uuid" json:"task_id"`
+	NamespaceURN string     `gorm:"not null" json:"namespace_urn"`
+	GlideletURN  string     `gorm:"not null" json:"glidelet_urn" `
 
 	Spec []GliderSpec `gorm:"foreignKey:TicketID" json:"spec" validate:"required,min=1" `
 
-	ReferenceTicketID string `gorm:"not null" json:"reference_ticket_id"`
+	ReferenceTicketID string `json:"reference_ticket_id"`
 
 	RedeemTimeout string       `gorm:"not null" json:"redeem_timeout" validate:"required"`
 	Lease         string       `gorm:"not null" json:"lease" validate:"required"` //unit sec

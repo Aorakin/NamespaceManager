@@ -20,12 +20,12 @@ func NewTicketUsecase(ticketRepository interfaces.TicketRepository) interfaces.T
 	return &TicketUsecase{TicketRepository: ticketRepository}
 }
 
-func (u *TicketUsecase) HandleTicketCallback(ticket models.GliderTicket) error {
+func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid uuid.UUID) error { //use for test (ใช้จริงคือสร้างจากที่รับมาจาก CH)
 	validate := validator.New()
-	if err := validate.Struct(ticket); err != nil {
+	if err := validate.Struct(ticketreq); err != nil {
 		return err
 	}
-
+	ticket := CreateTicketToGliderTicket(ticketreq, userid)
 	if err := u.TicketRepository.Create(ticket); err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]dt
 		if ticket.Status != "ready" {
 			return nil, fmt.Errorf("ticket not ready")
 		}
-		if ticket.TaskID != uuid.Nil {
+		if ticket.TaskID != nil && *ticket.TaskID != uuid.Nil {
 			return nil, fmt.Errorf("duplicate ticket in other task")
 		}
 		payload, err := u.SetPayload(ticket)
@@ -85,7 +85,6 @@ func (u *TicketUsecase) CreateTask(ticketIDs []uuid.UUID, ownerID uuid.UUID) err
 	var tickets []models.GliderTicket
 	for _, ticketID := range ticketIDs {
 		ticket, err := u.TicketRepository.GetTicketByID(ticketID, ownerID)
-		fmt.Println(ticket.TaskID != uuid.Nil)
 		if err != nil {
 			return err
 		}
@@ -198,4 +197,45 @@ func (u *TicketUsecase) FormatTicketRes(tickets []models.GliderTicket) []dtos.Ti
 		}
 	}
 	return ticketResponses
+}
+
+func CreateTicketToGliderTicket(req dtos.CreateTicket, ownerID uuid.UUID) *models.GliderTicket {
+	ticketID := uuid.New()
+
+	gliderSpecs := make([]models.GliderSpec, 0, len(req.Spec))
+	for _, specReq := range req.Spec {
+		specID := uuid.New()
+		specResources := make([]models.SpecResource, 0, len(specReq.Resources))
+
+		for _, resReq := range specReq.Resources {
+			specResources = append(specResources, models.SpecResource{
+				ID:       uuid.New(),
+				Name:     resReq.Name,
+				Quantity: resReq.Quantity,
+				Unit:     resReq.Unit,
+				SpecID:   specID,
+			})
+		}
+
+		gliderSpecs = append(gliderSpecs, models.GliderSpec{
+			ID:        specID,
+			TicketID:  ticketID,
+			Type:      specReq.Type,
+			PoolID:    specReq.PoolID,
+			Resources: specResources,
+		})
+	}
+
+	return &models.GliderTicket{
+		ID:                ticketID,
+		OwnerID:           ownerID,
+		NamespaceID:       req.NamespaceID,
+		NamespaceURN:      req.NamespaceURN,
+		GlideletURN:       req.GlideletURN,
+		Spec:              gliderSpecs,
+		ReferenceTicketID: req.ReferenceTicketID,
+		RedeemTimeout:     req.RedeemTimeout,
+		Lease:             req.Lease,
+		Signature:         req.Signature,
+	}
 }

@@ -25,7 +25,7 @@ func NewTicketRepository(db *gorm.DB) interfaces.TicketRepository {
 	return &TicketRepository{db: db}
 }
 
-func (r *TicketRepository) Create(ticket models.GliderTicket) error {
+func (r *TicketRepository) Create(ticket *models.GliderTicket) error {
 	if err := r.db.Create(&ticket).Error; err != nil {
 		return err
 	}

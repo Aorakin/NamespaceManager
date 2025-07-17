@@ -57,7 +57,7 @@ func (u *UsersUsecase) Register(registerInput dtos.RegisterInput) error {
 	return u.usersRepository.Create(user)
 }
 
-func (u *UsersUsecase) Login(username, password string) (*models.User, error) {
+func (u *UsersUsecase) Login(username string, password string) (*models.User, error) {
 	user, err := u.usersRepository.GetByUsername(username)
 	if err != nil || user == nil {
 		return nil, errors.New("invalid username or password")

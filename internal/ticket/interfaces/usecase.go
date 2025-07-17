@@ -7,7 +7,7 @@ import (
 )
 
 type TicketUsecase interface {
-	HandleTicketCallback(models.GliderTicket) error
+	HandleTicketCallback(dtos.CreateTicket, uuid.UUID) error
 	GetTicketNS(uuid.UUID, uuid.UUID) ([]dtos.TicketResponse, error)
 	SetPayload(models.GliderTicket) (*dtos.Payload, error)
 	ApporveTicket(uuid.UUID, uuid.UUID) (models.GliderTicket, error)
