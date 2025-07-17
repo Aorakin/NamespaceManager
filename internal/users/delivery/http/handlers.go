@@ -56,7 +56,7 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 // @Success 201 {object} map[string]string "User registered successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 409 {object} map[string]string "User already exists"
-// @Router /users/register [get]
+// @Router /users/register [post]
 func (h *UsersHandlers) Register() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var registerInput dtos.RegisterInput

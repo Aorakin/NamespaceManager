@@ -51,6 +51,7 @@ func (u *UsersUsecase) Register(registerInput dtos.RegisterInput) error {
 	user := &models.User{
 		Username: registerInput.Username,
 		Password: string(hashedPassword),
+		Email: 	registerInput.Email,
 	}
 
 	return u.usersRepository.Create(user)

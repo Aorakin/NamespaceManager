@@ -205,7 +205,7 @@ const docTemplate = `{
             }
         },
         "/users/register": {
-            "get": {
+            "post": {
                 "description": "Register a new user",
                 "consumes": [
                     "application/json"

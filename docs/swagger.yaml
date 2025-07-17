@@ -12,9 +12,9 @@ definitions:
         minLength: 2
         type: string
     required:
-    - email
-    - password
-    - username
+      - email
+      - password
+      - username
     type: object
   dtos.RequestNS:
     properties:
@@ -46,17 +46,17 @@ paths:
   /ns/nsCreate:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new namespace
       parameters:
-      - description: Namespace data
-        in: body
-        name: namespace
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.RequestNS'
+        - description: Namespace data
+          in: body
+          name: namespace
+          required: true
+          schema:
+            $ref: "#/definitions/dtos.RequestNS"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Namespace Created
@@ -75,15 +75,15 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: Create namespace
       tags:
-      - namespaces
+        - namespaces
   /ns/nsList:
     get:
       description: Get list of namespaces for the authenticated user
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of namespaces
@@ -97,28 +97,28 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: Get namespace list
       tags:
-      - namespaces
+        - namespaces
   /users/login:
     post:
       consumes:
-      - application/x-www-form-urlencoded
+        - application/x-www-form-urlencoded
       description: Login with username and password
       parameters:
-      - description: Username
-        in: formData
-        name: username
-        required: true
-        type: string
-      - description: Password
-        in: formData
-        name: password
-        required: true
-        type: string
+        - description: Username
+          in: formData
+          name: username
+          required: true
+          type: string
+        - description: Password
+          in: formData
+          name: password
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Login successful
@@ -140,12 +140,12 @@ paths:
             type: object
       summary: User login
       tags:
-      - users
+        - users
   /users/logout:
     post:
       description: Logout user and clear session
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Logout successful
@@ -154,24 +154,24 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: User logout
       tags:
-      - users
+        - users
   /users/register:
-    get:
+    post:
       consumes:
-      - application/json
+        - application/json
       description: Register a new user
       parameters:
-      - description: User registration data
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.RegisterInput'
+        - description: User registration data
+          in: body
+          name: user
+          required: true
+          schema:
+            $ref: "#/definitions/dtos.RegisterInput"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: User registered successfully
@@ -193,7 +193,7 @@ paths:
             type: object
       summary: User registration
       tags:
-      - users
+        - users
 securityDefinitions:
   ApiKeyAuth:
     in: header
