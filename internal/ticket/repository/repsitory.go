@@ -76,7 +76,7 @@ func (r *TicketRepository) Delete(ticketID uuid.UUID) error {
 
 func (r *TicketRepository) TicketHis(userID uuid.UUID) ([]models.GliderTicket, error) {
 	var tickets []models.GliderTicket
-	if err := r.db.Preload("Spec.Resources").Find(&tickets, "owner_id", userID).Error; err != nil {
+	if err := r.db.Preload("Spec.Resources").Find(&tickets, "owner_id = ?", userID).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -112,7 +112,7 @@ func (r *TicketRepository) CreateTask(task models.Tasks) error {
 
 func (r *TicketRepository) GetTasksByID(taskID uuid.UUID) (*models.Tasks, error) {
 	var task models.Tasks
-	if err := r.db.Preload("Tickets.Spec").First(&task, "id = ?", taskID).Error; err != nil {
+	if err := r.db.Preload("Tickets.Spec.Resources").First(&task, "id = ?", taskID).Error; err != nil {
 		return nil, err
 	}
 	return &task, nil
@@ -120,7 +120,7 @@ func (r *TicketRepository) GetTasksByID(taskID uuid.UUID) (*models.Tasks, error)
 
 func (r *TicketRepository) GetTasks(ownerID uuid.UUID) ([]models.Tasks, error) {
 	var tasks []models.Tasks
-	if err := r.db.Preload("Tickets.Spec").Find(&tasks, "owner_id = ?", ownerID).Error; err != nil {
+	if err := r.db.Preload("Tickets.Spec.Resources").Find(&tasks, "owner_id = ?", ownerID).Error; err != nil {
 		return nil, err
 	}
 	return tasks, nil

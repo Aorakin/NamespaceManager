@@ -169,32 +169,32 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 
 		userID := utils.GetSession(c, "userID").(uuid.UUID)
 
-		listPayload, err := h.ticketUsecase.UseTicket(ticketReq, userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		resp := make([][]map[string]interface{}, len(listPayload))
-		var successfulPayloads []dtos.Payload
-		var laststatus int
-		for i, payload := range listPayload {
-			status, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
-			if err != nil {
-				if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-				}
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-			successfulPayloads = append(successfulPayloads, payload)
-			resp[i] = jsonResponse
-			laststatus = status
-		}
-		if h.ticketUsecase.CreateTask(ticketReq, userID) != nil {
+		// listPayload, err := h.ticketUsecase.UseTicket(ticketReq, userID)
+		// if err != nil {
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// 	return
+		// }
+		// resp := make([][]map[string]interface{}, len(listPayload))
+		// var successfulPayloads []dtos.Payload
+		// var laststatus int
+		// for i, payload := range listPayload {
+		// 	status, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
+		// 	if err != nil {
+		// 		if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
+		// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		// 		}
+		// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// 		return
+		// 	}
+		// 	successfulPayloads = append(successfulPayloads, payload)
+		// 	resp[i] = jsonResponse
+		// 	laststatus = status
+		// }
+		if err := h.ticketUsecase.CreateTask(ticketReq, userID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
-		c.JSON(laststatus, gin.H{"rep": resp})
+	 	c.JSON(http.StatusOK, "response sent to CH and task created successfully")
 	}
 }
 
