@@ -105,24 +105,38 @@ func (u *TicketUsecase) StopTasks(taskID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
+	
+	// Try to send DELETE requests to external service, but don't fail if service is unavailable
 	for _, ticket := range task.Tickets {
 		payload, err := u.SetPayload(ticket)
 		if err != nil {
 			return err
 		}
 		if _, _, err := utils.SendRequest(url, payload, "DELETE"); err != nil {
-			fmt.Println(err)
-			return err
+			fmt.Printf("Warning: Failed to send DELETE request to external service: %v\n", err)
+			// Continue execution instead of returning error
 		}
 	}
+	
+	// First, clear the TaskID from tickets to break the foreign key relationship
 	for _, ticket := range task.Tickets {
-		u.TicketRepository.UpdateStatus(ticket.ID, "inactive")
+		if err := u.TicketRepository.ClearTaskID(ticket.ID); err != nil {
+			fmt.Printf("Warning: Failed to clear task ID for ticket %s: %v\n", ticket.ID, err)
+		}
 	}
+	
+	// Update ticket statuses to inactive
+	for _, ticket := range task.Tickets {
+		if err := u.TicketRepository.UpdateStatus(ticket.ID, "inactive"); err != nil {
+			fmt.Printf("Warning: Failed to update ticket status to inactive for ticket %s: %v\n", ticket.ID, err)
+		}
+	}
+	
+	// Finally, remove the task from database
 	if err := u.TicketRepository.RemoveTasks(taskID); err != nil {
 		return err
 	}
 	return nil
-
 }
 
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Tasks, error) {

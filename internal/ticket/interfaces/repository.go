@@ -17,4 +17,5 @@ type TicketRepository interface {
 	GetTasks(uuid.UUID) ([]models.Tasks, error)
 	RemoveTasks(uuid.UUID) error
 	GetTasksByID(uuid.UUID) (*models.Tasks, error)
+	ClearTaskID(uuid.UUID) error
 }

@@ -152,10 +152,10 @@ func (h *TicketHandlers) RemoveTask() gin.HandlerFunc {
 		}
 
 		if err := h.ticketUsecase.StopTasks(req.TaskID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"Tasks": "Stopped"})
+		c.JSON(http.StatusOK, gin.H{"message": "Task stopped successfully"})
 	}
 }
 

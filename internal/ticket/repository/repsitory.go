@@ -43,17 +43,14 @@ func (r *TicketRepository) GetTicketNS(userID uuid.UUID, namespaceID uuid.UUID) 
 }
 
 func (r *TicketRepository) UpdateStatus(ticketID uuid.UUID, updatedData models.StatusTicket) error {
-	var ticket models.GliderTicket
-	if err := r.db.First(&ticket, ticketID).Error; err != nil {
-		return err
+	// Use direct SQL update to avoid foreign key constraint issues
+	result := r.db.Model(&models.GliderTicket{}).Where("id = ?", ticketID).Update("status", updatedData)
+	if result.Error != nil {
+		return result.Error
 	}
-
-	ticket.Status = updatedData
-
-	if err := r.db.Save(&ticket).Error; err != nil {
-		return err
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no ticket found with ID: %s", ticketID)
 	}
-
 	return nil
 }
 
@@ -124,6 +121,15 @@ func (r *TicketRepository) GetTasks(ownerID uuid.UUID) ([]models.Tasks, error) {
 		return nil, err
 	}
 	return tasks, nil
+}
+
+func (r *TicketRepository) ClearTaskID(ticketID uuid.UUID) error {
+	// Clear the task_id field to break the foreign key relationship
+	result := r.db.Model(&models.GliderTicket{}).Where("id = ?", ticketID).Update("task_id", nil)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
 
 func (r *TicketRepository) RemoveTasks(taskID uuid.UUID) error {
