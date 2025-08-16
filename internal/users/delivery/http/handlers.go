@@ -10,6 +10,7 @@ import (
 	"github.com/NamespaceManager/internal/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type UsersHandlers struct {
@@ -19,6 +20,18 @@ type UsersHandlers struct {
 func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandlers {
 	return &UsersHandlers{
 		usersUsecase: usersUsecase,
+	}
+}
+
+func (h *UsersHandlers) Me() gin.HandlerFunc{
+	return func(c *gin.Context) {
+		userID := utils.GetSession(c, "userID").(uuid.UUID)
+		user, err := h.usersUsecase.GetUserByID(userID.String())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+			return
+		}
+		c.JSON(http.StatusOK, user)
 	}
 }
 

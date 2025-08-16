@@ -8,4 +8,5 @@ type UsersHandlers interface {
 	Callback() gin.HandlerFunc
 	Register() gin.HandlerFunc
 	Logout() gin.HandlerFunc
+	Me() gin.HandlerFunc
 }

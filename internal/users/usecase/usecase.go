@@ -10,6 +10,7 @@ import (
 	"github.com/NamespaceManager/internal/users/dtos"
 	"github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 )
@@ -22,6 +23,9 @@ func NewUsersUsecase(userRepository interfaces.UsersRepository) interfaces.Users
 	return &UsersUsecase{
 		usersRepository: userRepository,
 	}
+}
+func (u *UsersUsecase) GetUserByID(userID string) (*models.User, error) {
+	return u.usersRepository.GetUser(uuid.MustParse(userID))
 }
 
 func (u *UsersUsecase) GenerateLoginURL(state string) string {

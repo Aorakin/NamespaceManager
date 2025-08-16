@@ -11,4 +11,5 @@ type UsersUsecase interface {
 	HandleGoogleCallback(string, *gin.Context) (map[string]interface{}, error)
 	Register(dtos.RegisterInput) error
 	Login(string, string) (*models.User, error)
+	GetUserByID(string) (*models.User, error)
 }

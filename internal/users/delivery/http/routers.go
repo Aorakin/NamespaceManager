@@ -12,4 +12,5 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.POST("/register", usersHandler.Register())
 	usersGroup.POST("/login", usersHandler.Login())
 	usersGroup.GET("/logout", usersHandler.Logout()).Use(middleware.AuthMiddleware())
+	usersGroup.GET("/me", usersHandler.Me()).Use(middleware.AuthMiddleware())
 }
