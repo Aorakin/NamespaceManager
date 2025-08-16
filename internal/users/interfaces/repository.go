@@ -12,4 +12,6 @@ type UsersRepository interface {
 	Delete(uuid.UUID) error
 	GetUser(uuid.UUID) (*models.User, error)
 	GetByUsername(string) (*models.User, error)
+	GetByEmail(string) (*models.User, error)
+	CreateOrGetOAuthUser(providerID, email, username string, provider models.ProviderType, token *oauth2.Token) (*models.User, error)
 }

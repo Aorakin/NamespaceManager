@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/users/dtos"
 	"github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/NamespaceManager/internal/utils"
@@ -40,6 +41,33 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to handle callback"})
 			return
+		}
+
+		// Extract user from userInfo
+		if user, exists := userInfo["user"]; exists {
+			if userModel, ok := user.(*models.User); ok {
+				// Set session for the logged-in user
+				session := sessions.Default(c)
+				session.Set("userID", userModel.ID)
+				err = session.Save()
+				if err != nil {
+					log.Printf("Session save failed: %+v", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Session save failed"})
+					return
+				}
+				
+				// c.JSON(http.StatusOK, gin.H{
+				// 	"message": "Login successful",
+				// 	"user": gin.H{
+				// 		"id":       userModel.ID,
+				// 		"username": userModel.Username,
+				// 		"email":    userModel.Email,
+				// 		"role":     userModel.Role,
+				// 	},
+				// })
+				c.Redirect(http.StatusFound, "http://localhost:3000/projects")
+				return
+			}
 		}
 
 		c.JSON(http.StatusOK, userInfo)

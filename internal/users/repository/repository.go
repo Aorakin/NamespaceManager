@@ -38,7 +38,91 @@ func (r *UsersRepository) GetUserGoogle(token *oauth2.Token) (map[string]interfa
 	if err != nil {
 		return nil, err
 	}
+	
+	// Handle user creation/login with OAuth
+	googleID := userInfo["id"].(string)
+	email := userInfo["email"].(string)
+	name := userInfo["name"].(string)
+	
+	user, err := r.CreateOrGetOAuthUser(googleID, email, name, models.ProviderGoogle, token)
+	if err != nil {
+		return nil, err
+	}
+	
+	userInfo["user"] = user
 	return userInfo, nil
+}
+
+func (r *UsersRepository) CreateOrGetOAuthUser(providerID, email, username string, provider models.ProviderType, token *oauth2.Token) (*models.User, error) {
+	// First, try to find existing user provider record
+	var userProvider models.UserProvider
+	err := r.db.Preload("User").First(&userProvider, "provider = ? AND provider_id = ?", provider, providerID).Error
+	
+	if err == nil {
+		// User exists, update tokens
+		userProvider.AccessToken = token.AccessToken
+		userProvider.RefreshToken = token.RefreshToken
+		userProvider.ExpiresAt = &token.Expiry
+		r.db.Save(&userProvider)
+		return &userProvider.User, nil
+	}
+	
+	// Check if user exists by email
+	var existingUser models.User
+	err = r.db.Preload("UserProviders").First(&existingUser, "email = ?", email).Error
+	
+	if err == nil {
+		// User exists, add new provider
+		userProvider = models.UserProvider{
+			UserID:       existingUser.ID,
+			Provider:     provider,
+			ProviderID:   providerID,
+			AccessToken:  token.AccessToken,
+			RefreshToken: token.RefreshToken,
+			ExpiresAt:    &token.Expiry,
+		}
+		if err := r.db.Create(&userProvider).Error; err != nil {
+			return nil, err
+		}
+		existingUser.UserProviders = append(existingUser.UserProviders, userProvider)
+		return &existingUser, nil
+	}
+	
+	// Create new user with provider
+	newUser := models.User{
+		Username: username,
+		Email:    email,
+		Role:     models.UserRoleUser,
+	}
+	
+	if err := r.db.Create(&newUser).Error; err != nil {
+		return nil, err
+	}
+	
+	// Create provider record
+	userProvider = models.UserProvider{
+		UserID:       newUser.ID,
+		Provider:     provider,
+		ProviderID:   providerID,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		ExpiresAt:    &token.Expiry,
+	}
+	
+	if err := r.db.Create(&userProvider).Error; err != nil {
+		return nil, err
+	}
+	
+	newUser.UserProviders = []models.UserProvider{userProvider}
+	return &newUser, nil
+}
+
+func (r *UsersRepository) GetByEmail(email string) (*models.User, error) {
+	var user *models.User
+	if err := r.db.Preload("UserProviders").First(&user, "email = ?", email).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *UsersRepository) Create(user *models.User) error {
