@@ -13,5 +13,12 @@ func GetSession(c *gin.Context, key string) interface{} {
 func ClearSession(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
-	session.Save()
+	session.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+	})
+
+	_ = session.Save()
 }
