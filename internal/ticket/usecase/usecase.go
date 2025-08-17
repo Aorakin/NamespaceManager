@@ -208,6 +208,9 @@ func (u *TicketUsecase) FormatTicketRes(tickets []models.GliderTicket) []dtos.Ti
 			RedeemTimeout:     ticket.RedeemTimeout,
 			Lease:             ticket.Lease,
 			Signature:         ticket.Signature,
+			Status:            string(ticket.Status),
+			CreatedAt:        ticket.CreatedAt,
+			UpdatedAt:        ticket.UpdatedAt,
 		}
 	}
 	return ticketResponses

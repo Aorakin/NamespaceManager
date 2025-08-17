@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -32,6 +33,8 @@ type GliderTicket struct {
 	Lease         string       `gorm:"not null" json:"lease" validate:"required"` //unit sec
 	Signature     string       `gorm:"not null" json:"signature" validate:"required"`
 	Status        StatusTicket `gorm:"not null;default:'ready'" json:"status" `
+	CreatedAt     time.Time     `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (base *GliderTicket) BeforeCreate(tx *gorm.DB) (err error) {

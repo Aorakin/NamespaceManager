@@ -1,6 +1,8 @@
 package dtos
 
 import (
+	"time"
+
 	"github.com/NamespaceManager/internal/models"
 	"github.com/google/uuid"
 )
@@ -13,4 +15,7 @@ type TicketResponse struct {
 	RedeemTimeout     string              `json:"redeem_timeout"`
 	Lease             string              `json:"lease"`
 	Signature         string              `json:"signature"`
+	Status            string              `json:"status"`
+	CreatedAt        time.Time           `json:"created_at"`
+	UpdatedAt        time.Time           `json:"updated_at"`
 }
