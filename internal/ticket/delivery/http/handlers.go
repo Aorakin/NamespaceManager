@@ -161,7 +161,7 @@ func (h *TicketHandlers) RemoveTask() gin.HandlerFunc {
 
 func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var ticketReq []uuid.UUID
+		var ticketReq dtos.CreateTaskRequest
 		if err := c.ShouldBindJSON(&ticketReq); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return

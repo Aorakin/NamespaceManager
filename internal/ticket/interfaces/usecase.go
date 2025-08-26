@@ -17,7 +17,7 @@ type TicketUsecase interface {
 	RollbackFailedTickets([]dtos.Payload, int) error
 	UpdateStatus(uuid.UUID, models.StatusTicket) error
 	Delete(uuid.UUID) error
-	CreateTask([]uuid.UUID, uuid.UUID) error
+	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Tasks, error)
 	StopTasks(uuid.UUID) error
 }

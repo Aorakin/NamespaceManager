@@ -81,9 +81,9 @@ func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]dt
 	return tickets, nil
 }
 
-func (u *TicketUsecase) CreateTask(ticketIDs []uuid.UUID, ownerID uuid.UUID) error {
+func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.UUID) error {
 	var tickets []models.GliderTicket
-	for _, ticketID := range ticketIDs {
+	for _, ticketID := range taskReq.Tickets {
 		ticket, err := u.TicketRepository.GetTicketByID(ticketID, ownerID)
 		if err != nil {
 			return err
@@ -93,6 +93,8 @@ func (u *TicketUsecase) CreateTask(ticketIDs []uuid.UUID, ownerID uuid.UUID) err
 	}
 	task := models.Tasks{
 		Owner_ID: ownerID,
+		Title:    taskReq.Title,
+		Description: taskReq.Description,
 		Tickets:  tickets,
 	}
 	return u.TicketRepository.CreateTask(task)
