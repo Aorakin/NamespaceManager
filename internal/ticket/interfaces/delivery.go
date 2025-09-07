@@ -13,4 +13,5 @@ type TicketHandler interface {
 	Update() gin.HandlerFunc
 	GetTasks() gin.HandlerFunc
 	RemoveTask() gin.HandlerFunc
+	TicketStatus() gin.HandlerFunc
 }

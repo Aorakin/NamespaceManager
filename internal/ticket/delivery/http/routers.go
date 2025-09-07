@@ -18,4 +18,5 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.DELETE("/deleteTicket", ticketHandler.Delete())
 	ticketGroup.GET("/tasks", ticketHandler.GetTasks())
 	ticketGroup.DELETE("/stopTask", ticketHandler.RemoveTask())
+	ticketGroup.POST("/podStatus", ticketHandler.TicketStatus())
 }

@@ -19,3 +19,8 @@ type TicketResponse struct {
 	CreatedAt        time.Time           `json:"created_at"`
 	UpdatedAt        time.Time           `json:"updated_at"`
 }
+
+type StatusRes struct {
+	TicketID string `json:"ticketId" validate:"required"`
+	Status   string    `json:"status" validate:"required"`
+}

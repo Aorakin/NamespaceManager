@@ -58,8 +58,8 @@ func (u *TicketUsecase) TicketHis(userID uuid.UUID) ([]dtos.TicketResponse, erro
 	return ticketResponses, nil
 }
 
-func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]dtos.Payload, error) {
-	tickets := make([]dtos.Payload, len(ticketIDs))
+func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]models.GliderTicket, error) {
+	tickets := make([]models.GliderTicket, len(ticketIDs))
 	for i, ticketID := range ticketIDs {
 		ticket, err := u.TicketRepository.GetTicketByID(ticketID, userID)
 		if err != nil {
@@ -71,11 +71,7 @@ func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]dt
 		if ticket.TaskID != nil && *ticket.TaskID != uuid.Nil {
 			return nil, fmt.Errorf("duplicate ticket in other task")
 		}
-		payload, err := u.SetPayload(ticket)
-		if err != nil {
-			return nil, err
-		}
-		tickets[i] = *payload
+		tickets[i] = ticket
 		//ไม่ได้เช็ค ticket owner id match กับ user id
 	}
 	return tickets, nil
@@ -110,11 +106,7 @@ func (u *TicketUsecase) StopTasks(taskID uuid.UUID) error {
 	
 	// Try to send DELETE requests to external service, but don't fail if service is unavailable
 	for _, ticket := range task.Tickets {
-		payload, err := u.SetPayload(ticket)
-		if err != nil {
-			return err
-		}
-		if _, _, err := utils.SendRequest(url, payload, "DELETE"); err != nil {
+		if _, _, err := utils.SendRequest(url, ticket.ID, "DELETE"); err != nil {
 			fmt.Printf("Warning: Failed to send DELETE request to external service: %v\n", err)
 			// Continue execution instead of returning error
 		}
@@ -143,20 +135,6 @@ func (u *TicketUsecase) StopTasks(taskID uuid.UUID) error {
 
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Tasks, error) {
 	return u.TicketRepository.GetTasks(ownerID)
-}
-
-func (u *TicketUsecase) SetPayload(ticket models.GliderTicket) (*dtos.Payload, error) {
-	payload := dtos.Payload{
-		GlideletURN:       ticket.GlideletURN,
-		ID:                ticket.ID.String(),
-		Lease:             ticket.Lease,
-		NamespaceURN:      ticket.NamespaceURN,
-		RedeemTimeout:     ticket.RedeemTimeout,
-		ReferenceTicketID: ticket.ReferenceTicketID,
-		Signature:         ticket.ReferenceTicketID,
-		Spec:              ticket.Spec,
-	}
-	return &payload, nil
 }
 
 func (u *TicketUsecase) RollbackFailedTickets(listPayload []dtos.Payload, lastIndex int) error {

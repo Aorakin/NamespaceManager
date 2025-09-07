@@ -62,13 +62,7 @@ func (h *TicketHandlers) SendTicket() gin.HandlerFunc {
 			return
 		}
 
-		payload, err := h.ticketUsecase.SetPayload(ticket)
-		if err != nil || ticket.Status != "ready" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		status, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
+		status, jsonResponse, err := h.ticketUsecase.SendTicket(ticket)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
@@ -169,16 +163,11 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 
 		userID := utils.GetSession(c, "userID").(uuid.UUID)
 
-		// listPayload, err := h.ticketUsecase.UseTicket(ticketReq, userID)
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// 	return
-		// }
-		// resp := make([][]map[string]interface{}, len(listPayload))
-		// var successfulPayloads []dtos.Payload
-		// var laststatus int
-		// for i, payload := range listPayload {
-		// 	status, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
+		// resp := make([][]map[string]interface{}, len(ticketReq.Tickets))
+		// var successfulPayloads []models.GliderTicket
+		// // var laststatus int
+		// for i, payload := range ticketReq.Tickets {
+		// 	_, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
 		// 	if err != nil {
 		// 		if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
 		// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
@@ -188,13 +177,22 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 		// 	}
 		// 	successfulPayloads = append(successfulPayloads, payload)
 		// 	resp[i] = jsonResponse
-		// 	laststatus = status
+		// 	// laststatus = status
 		// }
+		_, jsonResponse, err := h.ticketUsecase.SendTicket(ticketReq.Tickets)
+			if err != nil {
+				// if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
+				// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+				// }
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
 		if err := h.ticketUsecase.CreateTask(ticketReq, userID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
-	 	c.JSON(http.StatusOK, "response sent to CH and task created successfully")
+	 	c.JSON(http.StatusOK, jsonResponse)
 	}
 }
 
@@ -231,5 +229,16 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc { // request ticket to 
 		// }
 		c.JSON(status, tickets)
 
+	}
+}
+
+func (h *TicketHandlers) TicketStatus() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req dtos.StatusRes
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		}
+		
 	}
 }
