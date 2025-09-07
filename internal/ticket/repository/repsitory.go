@@ -79,10 +79,10 @@ func (r *TicketRepository) TicketHis(userID uuid.UUID) ([]models.GliderTicket, e
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetTicketByID(ID uuid.UUID, userID uuid.UUID) (models.GliderTicket, error) {
+func (r *TicketRepository) GetTicketByID(ID uuid.UUID) (models.GliderTicket, error) {
 	var ticket models.GliderTicket
 	if err := r.db.Preload("Spec.Resources").
-		Where("id = ? AND owner_id = ?", ID, userID).
+		Where("id = ?", ID).
 		First(&ticket, "id = ?", ID).Error; err != nil {
 		return models.GliderTicket{}, err
 	}

@@ -16,11 +16,18 @@ type TicketResponse struct {
 	Lease             string              `json:"lease"`
 	Signature         string              `json:"signature"`
 	Status            string              `json:"status"`
-	CreatedAt        time.Time           `json:"created_at"`
-	UpdatedAt        time.Time           `json:"updated_at"`
+	CreatedAt         time.Time           `json:"created_at"`
+	UpdatedAt         time.Time           `json:"updated_at"`
 }
 
 type StatusRes struct {
-	TicketID string `json:"ticketId" validate:"required"`
-	Status   string    `json:"status" validate:"required"`
+	TicketID string      `json:"ticketId"`
+	Pods     []PodStatus `json:"status"`
+	HasError bool        `json:"hasError"`
+}
+
+type PodStatus struct {
+	PodID    string `json:"podId"`
+	Status   string `json:"status"`
+	ErrorMsg string `json:"errorMsg,omitempty"`
 }

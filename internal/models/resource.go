@@ -9,7 +9,7 @@ type SpecResource struct {
 	ID       uuid.UUID `gorm:"type:uuid;primaryKey;not null" json:"id"`
 	Name     string    `gorm:"not null" json:"name"`
 	SpecID   uuid.UUID `gorm:"type:uuid;not null" json:"-"`
-	Quantity string    `gorm:"not null" json:"quantity"`
+	Quantity int64     `gorm:"not null" json:"quantity"`
 	Unit     string    `gorm:"not null" json:"unit"`
 }
 

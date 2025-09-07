@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/NamespaceManager/internal/models"
@@ -48,33 +49,27 @@ func (h *TicketHandlers) GetHistory() gin.HandlerFunc {
 	}
 }
 
-func (h *TicketHandlers) SendTicket() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var ticketReq dtos.TicketIDRequest
-		if err := c.ShouldBindJSON(&ticketReq); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		}
-		userID := utils.GetSession(c, "userID").(uuid.UUID)
-		ticket, err := h.ticketUsecase.ApporveTicket(ticketReq.ID, userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ticket not match"})
-			return
-		}
+// func (h *TicketHandlers) SendTicket() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		var ticketReq dtos.TicketIDRequest
+// 		if err := c.ShouldBindJSON(&ticketReq); err != nil {
+// 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+// 			return
+// 		}
 
-		status, jsonResponse, err := h.ticketUsecase.SendTicket(ticket)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+// 		status, jsonResponse, err := h.ticketUsecase.SendTicket(ticketReq.Tickets)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		}
 
-		if err := h.ticketUsecase.UpdateStatus(ticket.ID, "active"); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-			return
-		}
+// 		if err := h.ticketUsecase.UpdateStatus(ticket.ID, "active"); err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+// 			return
+// 		}
 
-		c.JSON(status, jsonResponse)
-	}
-}
+// 		c.JSON(status, jsonResponse)
+// 	}
+// }
 
 func (h *TicketHandlers) GetTicketNS() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -179,20 +174,21 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 		// 	resp[i] = jsonResponse
 		// 	// laststatus = status
 		// }
+		log.Println(ticketReq.Tickets)
 		_, jsonResponse, err := h.ticketUsecase.SendTicket(ticketReq.Tickets)
-			if err != nil {
-				// if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
-				// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-				// }
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
+		if err != nil {
+			// if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			// }
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 
 		if err := h.ticketUsecase.CreateTask(ticketReq, userID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
-	 	c.JSON(http.StatusOK, jsonResponse)
+		c.JSON(http.StatusOK, jsonResponse)
 	}
 }
 
@@ -234,11 +230,12 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc { // request ticket to 
 
 func (h *TicketHandlers) TicketStatus() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.StatusRes
+		var req []dtos.StatusRes
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
 		}
-		
+		c.JSON(http.StatusOK, gin.H{"status received": req})
+
 	}
 }

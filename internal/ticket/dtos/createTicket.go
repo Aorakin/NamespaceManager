@@ -26,6 +26,6 @@ type SpecListReq struct {
 
 type SpecResourceReq struct {
 	Name     string `json:"name" validate:"required"`
-	Quantity string `json:"quantity" validate:"required"`
+	Quantity int64  `json:"quantity" validate:"required"`
 	Unit     string `json:"unit" validate:"required"`
 }

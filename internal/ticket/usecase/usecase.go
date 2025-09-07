@@ -58,10 +58,10 @@ func (u *TicketUsecase) TicketHis(userID uuid.UUID) ([]dtos.TicketResponse, erro
 	return ticketResponses, nil
 }
 
-func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]models.GliderTicket, error) {
+func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID) ([]models.GliderTicket, error) {
 	tickets := make([]models.GliderTicket, len(ticketIDs))
 	for i, ticketID := range ticketIDs {
-		ticket, err := u.TicketRepository.GetTicketByID(ticketID, userID)
+		ticket, err := u.TicketRepository.GetTicketByID(ticketID)
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID, userID uuid.UUID) ([]mo
 func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.UUID) error {
 	var tickets []models.GliderTicket
 	for _, ticketID := range taskReq.Tickets {
-		ticket, err := u.TicketRepository.GetTicketByID(ticketID, ownerID)
+		ticket, err := u.TicketRepository.GetTicketByID(ticketID)
 		if err != nil {
 			return err
 		}
@@ -88,10 +88,10 @@ func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.
 		tickets = append(tickets, ticket)
 	}
 	task := models.Tasks{
-		Owner_ID: ownerID,
-		Title:    taskReq.Title,
+		Owner_ID:    ownerID,
+		Title:       taskReq.Title,
 		Description: taskReq.Description,
-		Tickets:  tickets,
+		Tickets:     tickets,
 	}
 	return u.TicketRepository.CreateTask(task)
 }
@@ -103,7 +103,7 @@ func (u *TicketUsecase) StopTasks(taskID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Try to send DELETE requests to external service, but don't fail if service is unavailable
 	for _, ticket := range task.Tickets {
 		if _, _, err := utils.SendRequest(url, ticket.ID, "DELETE"); err != nil {
@@ -111,21 +111,21 @@ func (u *TicketUsecase) StopTasks(taskID uuid.UUID) error {
 			// Continue execution instead of returning error
 		}
 	}
-	
+
 	// First, clear the TaskID from tickets to break the foreign key relationship
 	for _, ticket := range task.Tickets {
 		if err := u.TicketRepository.ClearTaskID(ticket.ID); err != nil {
 			fmt.Printf("Warning: Failed to clear task ID for ticket %s: %v\n", ticket.ID, err)
 		}
 	}
-	
+
 	// Update ticket statuses to inactive
 	for _, ticket := range task.Tickets {
 		if err := u.TicketRepository.UpdateStatus(ticket.ID, "inactive"); err != nil {
 			fmt.Printf("Warning: Failed to update ticket status to inactive for ticket %s: %v\n", ticket.ID, err)
 		}
 	}
-	
+
 	// Finally, remove the task from database
 	if err := u.TicketRepository.RemoveTasks(taskID); err != nil {
 		return err
@@ -151,30 +151,55 @@ func (u *TicketUsecase) RollbackFailedTickets(listPayload []dtos.Payload, lastIn
 	return nil
 }
 
-func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID, userID uuid.UUID) (models.GliderTicket, error) {
-	ticket, err := u.TicketRepository.GetTicketByID(ticketID, userID)
+func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (models.GliderTicket, error) {
+	ticket, err := u.TicketRepository.GetTicketByID(ticketID)
 	if err != nil {
 		return models.GliderTicket{}, err
 	}
-	if ticket.Status != "ready" || ticket.OwnerID != userID {
+	if ticket.Status != "ready" {
 		return models.GliderTicket{}, fmt.Errorf("ticket not ready")
 	}
 	//check ticket with passport
 	return ticket, nil
 }
 
-func (u *TicketUsecase) SendTicket(payload interface{}) (int, []map[string]interface{}, error) {
-	url := "http://host.docker.internal:5000/api/v1/resourceunit"
-	status, body, err := u.TicketRepository.SendRequest(url, payload, "POST")
+func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interface{}, error) {
+	var tickets []models.GliderTicket
+	fmt.Println("payload", payload)
+	for _, ticketID := range payload {
+		ticket, err := u.ApporveTicket(ticketID)
+		if err != nil {
+			return 0, nil, err
+		}
+		tickets = append(tickets, ticket)
+	}
+	fmt.Println(tickets)
+	url := "http://host.docker.internal:5000/api/v1/ticket/createList"
+	status, body, err := u.TicketRepository.SendRequest(url, tickets, "POST")
 	if err != nil {
 		return 0, nil, err
 	}
-	var jsonResponse []map[string]interface{}
+	var jsonResponse map[string]interface{}
 	err = json.Unmarshal(body, &jsonResponse)
 	if err != nil {
-		return 0, nil, fmt.Errorf("error : Failed to parse response")
+		return 0, nil, fmt.Errorf("error : Failed to parse response: %w", err)
 	}
+
 	return status, jsonResponse, nil
+}
+
+func (u *TicketUsecase) SetPayload(ticket models.GliderTicket) (*dtos.Payload, error) {
+	payload := dtos.Payload{
+		GlideletURN:       ticket.GlideletURN,
+		ID:                ticket.ID.String(),
+		Lease:             ticket.Lease,
+		NamespaceURN:      ticket.NamespaceURN,
+		RedeemTimeout:     ticket.RedeemTimeout,
+		ReferenceTicketID: ticket.ReferenceTicketID,
+		Signature:         ticket.ReferenceTicketID,
+		Spec:              ticket.Spec,
+	}
+	return &payload, nil
 }
 
 func (u *TicketUsecase) FormatTicketRes(tickets []models.GliderTicket) []dtos.TicketResponse {
@@ -189,8 +214,8 @@ func (u *TicketUsecase) FormatTicketRes(tickets []models.GliderTicket) []dtos.Ti
 			Lease:             ticket.Lease,
 			Signature:         ticket.Signature,
 			Status:            string(ticket.Status),
-			CreatedAt:        ticket.CreatedAt,
-			UpdatedAt:        ticket.UpdatedAt,
+			CreatedAt:         ticket.CreatedAt,
+			UpdatedAt:         ticket.UpdatedAt,
 		}
 	}
 	return ticketResponses
