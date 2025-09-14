@@ -20,4 +20,6 @@ type TicketUsecase interface {
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Tasks, error)
 	StopTasks(uuid.UUID) error
+	GetTicketFromCH(string) (int, []dtos.TicketDTO, error)
+	GetTicketByNamespaceID(string) ([]dtos.TicketDTO, error)
 }

@@ -7,6 +7,8 @@ import (
 
 type TicketRepository interface {
 	Create(*models.GliderTicket) error
+	GetTicketByNamespaceID(string) ([]models.Ticket, error)
+	UpsertTicketFromCH(*models.Ticket) error
 	GetTicketByID(uuid.UUID) (models.GliderTicket, error)
 	GetTicketNS(uuid.UUID, uuid.UUID) ([]models.GliderTicket, error)
 	SendRequest(string, interface{}, string) (int, []byte, error)

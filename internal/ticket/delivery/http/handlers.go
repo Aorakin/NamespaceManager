@@ -239,3 +239,48 @@ func (h *TicketHandlers) TicketStatus() gin.HandlerFunc {
 
 	}
 }
+
+func (h *TicketHandlers) GetTicketByNamespaceID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		namespaceID := c.Param("namespace_id")
+		log.Println("namespaceID", namespaceID)
+		tickets, err := h.ticketUsecase.GetTicketByNamespaceID(namespaceID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, tickets)
+	}
+}
+
+func (h *TicketHandlers) GetTicketFromCH() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		namespaceId := c.Param("namespace_id")
+		status,tickets,err := h.ticketUsecase.GetTicketFromCH(namespaceId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(status, tickets)
+	}
+}
+
+func (h *TicketHandlers) RequestTicketToCH() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ticketReq dtos.RequestTicketDTO
+		if err := c.ShouldBindJSON(&ticketReq); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		}
+
+		url := "http://ch-web:8080/tickets/"
+		status, _, err := utils.SendRequest(url, ticketReq, "POST")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(status, gin.H{"response": "Ticket Requested"})
+
+	}
+}

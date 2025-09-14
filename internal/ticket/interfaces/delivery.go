@@ -14,4 +14,7 @@ type TicketHandler interface {
 	GetTasks() gin.HandlerFunc
 	RemoveTask() gin.HandlerFunc
 	TicketStatus() gin.HandlerFunc
+	GetTicketFromCH() gin.HandlerFunc
+	RequestTicketToCH() gin.HandlerFunc
+	GetTicketByNamespaceID() gin.HandlerFunc
 }

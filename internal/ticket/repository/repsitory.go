@@ -32,6 +32,41 @@ func (r *TicketRepository) Create(ticket *models.GliderTicket) error {
 	return nil
 }
 
+func (r *TicketRepository) GetTicketByNamespaceID(namespaceID string) ([]models.Ticket, error) {
+	   var tickets []models.Ticket
+    if err := r.db.Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
+        return nil, err
+    }
+    if len(tickets) == 0 {
+        return tickets, nil
+    }
+    for i := range tickets {
+        if err := r.db.Where("ticket_id = ?", tickets[i].ID).Find(&tickets[i].Resources).Error; err != nil {
+            return nil, err
+        }
+    }
+    return tickets, nil
+}
+
+func (r *TicketRepository) UpsertTicketFromCH(ticketreq *models.Ticket) error {
+    // First, try to find existing ticket by ExternalID
+    var existingTicket models.Ticket
+    if err := r.db.Preload("Resources").Where("external_id = ?", ticketreq.ExternalID).First(&existingTicket).Error; err == nil {
+        // Ticket exists, update it
+        ticketreq.ID = existingTicket.ID // Use existing ID
+        
+        // Delete existing resources first to avoid duplicates
+        if err := r.db.Where("ticket_id = ?", existingTicket.ID).Delete(&models.Resource{}).Error; err != nil {
+            return err
+        }
+        
+        // Now save the ticket with new resources
+        return r.db.Save(ticketreq).Error
+    }
+    // Ticket doesn't exist, create new one
+    return r.db.Create(ticketreq).Error
+}
+
 func (r *TicketRepository) GetTicketNS(userID uuid.UUID, namespaceID uuid.UUID) ([]models.GliderTicket, error) {
 	var tickets []models.GliderTicket
 	if err := r.db.Preload("Spec.Resources").

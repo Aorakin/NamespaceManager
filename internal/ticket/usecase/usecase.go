@@ -261,3 +261,95 @@ func CreateTicketToGliderTicket(req dtos.CreateTicket, ownerID uuid.UUID) *model
 		Signature:         req.Signature,
 	}
 }
+
+func (u *TicketUsecase) ticketModeltoDTO(tickets []models.Ticket) []dtos.TicketDTO{
+	ticketResponses := make([]dtos.TicketDTO, len(tickets))
+	for i, ticket := range tickets {
+		ticketResponses[i] = dtos.TicketDTO{
+			ID:             ticket.ExternalID,
+			Name:           ticket.Name,
+			Status:         ticket.Status,
+			StartTime:      ticket.StartTime,
+			EndTime:        ticket.EndTime,
+			Duration:       ticket.Duration,
+			Price:          ticket.Price,
+			OwnerID: 				ticket.OwnerID,
+			NamespaceID:    ticket.NamespaceID,
+			ResourcePoolID: ticket.ResourcePoolID,
+			QuotaID:        ticket.QuotaID,
+			Resources:      func() []dtos.ResourceDTO {
+				resources := make([]dtos.ResourceDTO, len(ticket.Resources))
+				for i, res := range ticket.Resources {
+					resources[i] = dtos.ResourceDTO{
+						ID:       res.ExternalID,
+						Quantity: res.Quantity,
+					}
+				}
+				return resources
+			}(),
+		}
+	}
+	return ticketResponses
+}
+
+func DTOtoTicketModel(ticket dtos.TicketDTO) models.Ticket{
+
+	resources := make([]models.Resource, 0, len(ticket.Resources))
+	for _, res := range ticket.Resources {
+		resources = append(resources, models.Resource{
+			// BaseModel:  models.BaseModel{ID: uuid.New()},
+			ExternalID: res.ID,
+			Quantity:   res.Quantity,
+		})
+	}
+	ticketModel := models.Ticket{
+		ExternalID:     ticket.ID,
+		Name:           ticket.Name,
+		Status:         ticket.Status,
+		StartTime:      ticket.StartTime,
+		EndTime:        ticket.EndTime,
+		Duration:       ticket.Duration,
+		Price:          ticket.Price,
+		OwnerID:        ticket.OwnerID,
+		NamespaceID:    ticket.NamespaceID,
+		ResourcePoolID: ticket.ResourcePoolID,
+		QuotaID:        ticket.QuotaID,
+		Resources:      resources,
+	}
+	return ticketModel
+}
+
+func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]dtos.TicketDTO, error) {
+	tickets, err := u.TicketRepository.GetTicketByNamespaceID(namespaceId)
+	if err != nil {
+		return []dtos.TicketDTO{}, err
+	}
+	if len(tickets) == 0 {
+		return []dtos.TicketDTO{}, nil
+	}
+	ticketResponses := u.ticketModeltoDTO(tickets)
+	return ticketResponses, nil
+}
+
+func (u *TicketUsecase) GetTicketFromCH(namespaceId string) (int, []dtos.TicketDTO, error) {
+	url := fmt.Sprintf("http://ch-web:8080/tickets/namespace/%s", namespaceId)
+
+	status, body, err := utils.SendRequest(url, nil, "GET")
+	if err != nil {
+		return 0, nil, err
+	}
+	var tickets []dtos.TicketDTO
+	err = json.Unmarshal(body, &tickets)
+	if err != nil {
+		return 0, nil, fmt.Errorf("error : Failed to parse response: %w", err)
+	}
+	for _, ticket := range tickets {
+		ticketModel := DTOtoTicketModel(ticket)
+		err := u.TicketRepository.UpsertTicketFromCH(&ticketModel)
+		if err != nil {
+			return 0, nil, err
+		}
+	}
+
+	return status, tickets, nil
+}
