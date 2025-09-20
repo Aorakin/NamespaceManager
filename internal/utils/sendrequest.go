@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -23,6 +24,11 @@ func SendRequest(url string, payload interface{}, method string) (int, []byte, e
 	}
 	req.Header.Set("Content-Type", "application/json")
 	// req.Header.Set("Authorization", "Bearer your token")
+	sessionCookie := os.Getenv("SESSION_COOKIE")
+
+	if sessionCookie != "" {
+		req.Header.Set("Cookie", sessionCookie)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {

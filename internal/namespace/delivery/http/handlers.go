@@ -1,14 +1,15 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/NamespaceManager/internal/namespace/dtos"
 	"github.com/NamespaceManager/internal/namespace/interfaces"
 	"github.com/NamespaceManager/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type NSHandlers struct {
@@ -19,116 +20,154 @@ func NewNSHandler(NSUsecase interfaces.NSUsecase) interfaces.NSHandler {
 	return &NSHandlers{nsUsecase: NSUsecase}
 }
 
-// Create godoc
-// @Summary Create namespace
-// @Description Create a new namespace
-// @Tags namespaces
-// @Accept json
-// @Produce json
-// @Param namespace body dtos.RequestNS true "Namespace data"
-// @Success 200 {string} string "Namespace Created"
-// @Failure 400 {object} map[string]string "Invalid input"
-// @Failure 409 {object} map[string]string "Conflict error"
-// @Security ApiKeyAuth
-// @Router /ns/nsCreate [post]
-func (h NSHandlers) Create() gin.HandlerFunc {
+func (h NSHandlers) GetProjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.RequestNS
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		}
-		userID := utils.GetSession(c, "userID").(uuid.UUID)
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/all"
 
-		if err := h.nsUsecase.HandleCreate(req, userID); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, "Namespace Created")
-	}
-}
-
-// GetNSList godoc
-// @Summary Get namespace list
-// @Description Get list of namespaces for the authenticated user
-// @Tags namespaces
-// @Produce json
-// @Success 200 {object} map[string]interface{} "List of namespaces"
-// @Failure 409 {object} map[string]string "Conflict error"
-// @Security ApiKeyAuth
-// @Router /ns/nsList [get]
-func (h NSHandlers) GetNSList() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID := utils.GetSession(c, "userID").(uuid.UUID)
-		fmt.Println(userID)
-		NSList, err := h.nsUsecase.GetNSList(userID)
+		status, body, err := utils.SendRequest(url, nil, "GET")
 		if err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"namespace": NSList})
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var projects []dtos.ProjectDTO
+		if err := json.Unmarshal(body, &projects); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse projects"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"projects": projects})
 	}
 }
-
-func (h NSHandlers) AddUsersToNamespace() gin.HandlerFunc {
+func (h NSHandlers) GetProjectDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.UpdateNamespaceUsersReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		projectID := c.Param("project_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/" + projectID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
-		if err := h.nsUsecase.AddUsersToNamespace(req); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"namespace": "Users added to namespace successfully"})
+		var project dtos.ProjectDTO
+		if err := json.Unmarshal(body, &project); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse project"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"project": project})
 	}
 }
-
-func (h NSHandlers) RemoveUsersFromNamespace() gin.HandlerFunc {
+func (h NSHandlers) GetNamespacesByProjectID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.UpdateNamespaceUsersReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		}
+		projectID := c.Param("project_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/all/" + projectID
 
-		if err := h.nsUsecase.RemoveUsersFromNamespace(req); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"namespace": "Users removed from namespace successfully"})
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var namespaces []dtos.NamespaceDTO
+		if err := json.Unmarshal(body, &namespaces); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse namespaces"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"namespaces": namespaces})
+	}
+
+}
+func (h NSHandlers) GetNamespacesDetail() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		namespaceID := c.Param("ns_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/" + namespaceID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		fmt.Println(string(body))
+		var namespace dtos.NamespaceDTO
+		if err := json.Unmarshal(body, &namespace); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse namespace"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"namespace": namespace})
 	}
 }
-
-func (h NSHandlers) Update() gin.HandlerFunc {
+func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.ReqForEdit
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		namespaceID := c.Param("ns_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/quota/namespace/" + namespaceID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		if err := h.nsUsecase.Update(req); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"Update": "Success"})
+		var quotas []dtos.QuotaDTO
+		if err := json.Unmarshal(body, &quotas); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse quotas"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"quotas": quotas})
+	}
+
+}
+func (h NSHandlers) GetProjectUsageByProjectID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		projectID := c.Param("project_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/" + projectID + "/usage"
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var usage dtos.UsageDTO
+		if err := json.Unmarshal(body, &usage); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse project usage"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"projectUsage": usage})
 	}
 }
-
-func (h NSHandlers) Delete() gin.HandlerFunc {
+func (h NSHandlers) GetNamespaceUsageByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.RequestNSID
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		namespaceID := c.Param("ns_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/" + namespaceID + "/usage"
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
-		if err := h.nsUsecase.Delete(req.NamespaceID); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"Delete": "Success"})
+		var usage dtos.UsageDTO
+		if err := json.Unmarshal(body, &usage); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse namespace usage"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"namespaceUsage": usage})
 	}
 }
