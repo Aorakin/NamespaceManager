@@ -10,4 +10,6 @@ type NSHandler interface {
 	GetQuotaByNamespaceID() gin.HandlerFunc
 	GetProjectUsageByProjectID() gin.HandlerFunc
 	GetNamespaceUsageByNamespaceID() gin.HandlerFunc
+	GetQuotaUsageByNamespaceID() gin.HandlerFunc
+	GetResource() gin.HandlerFunc
 }

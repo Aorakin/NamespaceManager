@@ -1,26 +1,29 @@
 package dtos
 
+// ProjectDTO represents a project with its details
 type ProjectDTO struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
 	Description    string `json:"description"`
 	OrganizationID string `json:"organization_id"`
 }
+// NamespaceDTO represents a namespace with its details
 type NamespaceDTO struct {
-	ID               string   `json:"id"`
-	Name             string   `json:"name"`
-	Description      string   `json:"description"`
-	Credit           float64  `json:"credit"`
-	ProjectID        string   `json:"project_id"`
-	Quotas           string   `json:"quotas"`
+	ID               string             `json:"id"`
+	Name             string             `json:"name"`
+	Description      string             `json:"description"`
+	Credit           float64            `json:"credit"`
+	ProjectID        string             `json:"project_id"`
+	Quotas           string             `json:"quotas"`
 	NamespaceMembers []NamespaceMembers `json:"namespace_members"`
 }
 type NamespaceMembers struct {
-	ID					string `json:"id"`
-	Email				string `json:"email"`
-	FirstName			string `json:"first_name"`
-	LastName			string `json:"last_name"`
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
+// QuotaDTO represents quota details for a namespace
 type QuotaDTO struct {
 	ID             string     `json:"id"`
 	Name           string     `json:"name"`
@@ -28,9 +31,9 @@ type QuotaDTO struct {
 	ProjectID      string     `json:"project_id"`
 	ProjectQuotaID string     `json:"project_quota_id"`
 	ResourcePoolID string     `json:"resource_pool_id"`
-	Resources      []Resource `json:"resources"`
+	Resources      []QuotaResource `json:"resources"`
 }
-type Resource struct {
+type QuotaResource struct {
 	ID                 string           `json:"id"`
 	NamespaceQuotaID   string           `json:"namespace_quota_id"`
 	Quantity           int64            `json:"quantity"`
@@ -43,6 +46,7 @@ type ResourceProperty struct {
 	Price       int64  `json:"price"`
 	MaxDuration int64  `json:"max_duration"`
 }
+// UsageDTO represents usage details for a project or namespace
 type UsageDTO struct {
 	Usage []UsageDetail `json:"usage"`
 }
@@ -51,4 +55,18 @@ type UsageDetail struct {
 	Type   string `json:"type"`
 	Quota  int64  `json:"quota"`
 	Usage  int64  `json:"usage"`
+}
+// ResourceDTO represents a resource with its details
+type ResourceDTO struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Quantity       int64  `json:"quantity"`
+	ResourceTypeID string `json:"resource_type_id"`
+	ResourceType   ResourceType `json:"resource_type"`
+	ResourcePoolID string `json:"resource_pool_id"`
+}
+type ResourceType struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Unit string `json:"unit"`
 }

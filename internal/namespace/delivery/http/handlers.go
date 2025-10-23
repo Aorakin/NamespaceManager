@@ -25,6 +25,7 @@ func (h NSHandlers) GetProjects() gin.HandlerFunc {
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/all"
 
 		status, body, err := utils.SendRequest(url, nil, "GET")
+		fmt.Println(string(body))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -169,5 +170,49 @@ func (h NSHandlers) GetNamespaceUsageByNamespaceID() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"namespaceUsage": usage})
+	}
+}
+func (h NSHandlers) GetQuotaUsageByNamespaceID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		quotaID := c.Param("quota_id")
+		namespaceID := c.Param("ns_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/quota/" + quotaID + "/usage/" + namespaceID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var usage dtos.UsageDTO
+		if err := json.Unmarshal(body, &usage); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse quota usage"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"quotaUsage": usage})
+	}
+}
+func (h NSHandlers) GetResource() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		resourceID := c.Param("resource_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/" + resourceID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var resource dtos.ResourceDTO
+		fmt.Println(string(body))
+		if err := json.Unmarshal(body, &resource); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse resource types"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"resource": resource})
 	}
 }
