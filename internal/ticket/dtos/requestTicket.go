@@ -1,11 +1,13 @@
 package dtos
 
-type RequestTicket struct {
-	PoolName  string `json:"pool_name" validate:"required" `
-	GPU       string `json:"gpu" `
-	Ram       string `json:"ram"`
-	VRam      string `json:"vram"`
-	CPU       string `json:"cpu"`
-	Storage   string `json:"storage"`
-	UsageTime string `json:"usage_time" validate:"required"`
+type ResourceDTO struct {
+	ID       string `json:"resource_id"`
+	Quantity int    `json:"quantity"`
+}
+type RequestTicketDTO struct {
+	Name        string        `json:"name" binding:"required"`
+	NamespaceID string        `json:"namespace_id" binding:"required"`
+	QuotaID     string        `json:"quota_id" binding:"required"`
+	Resources   []ResourceDTO `json:"resources" binding:"required"`
+	Duration    int           `json:"duration" binding:"required"`
 }

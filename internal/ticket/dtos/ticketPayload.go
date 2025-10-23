@@ -1,20 +1,20 @@
 package dtos
 
-import (
-	"github.com/NamespaceManager/internal/models"
-	"github.com/google/uuid"
-)
+// import (
+// 	"github.com/NamespaceManager/internal/models"
+// 	"github.com/google/uuid"
+// )
 
-type Payload struct {
-    GlideletURN       string       `json:"glidelet_urn"`
-    ID                string   `json:"id"`
-    Lease             string       `json:"lease"`
-    NamespaceURN      string       `json:"namespace_urn"`
-    RedeemTimeout     string       `json:"redeem_timeout"`
-    ReferenceTicketID string       `json:"reference_ticket_id"`
-    Signature         string       `json:"signature"`
-    Spec              []models.GliderSpec `json:"spec"`
-}
+// type Payload struct {
+//     ID                string   `json:"id"`
+//     NamespaceURN      string       `json:"namespace_urn"`
+//     GlideletURN       string       `json:"glidelet_urn"`
+//     Spec              []models.GliderSpec `json:"spec"`
+//     ReferenceTicketID string       `json:"reference_ticket_id"`
+//     RedeemTimeout     string       `json:"redeem_timeout"`
+//     Lease             string       `json:"lease"`
+//     Signature         string       `json:"signature"`
+// }
 
 // type GliderSpec struct {
 //     Type      ResourceUnitType `gorm:"not null" json:"type"`
@@ -28,23 +28,23 @@ type Payload struct {
 //     Unit     string `gorm:"not null" json:"unit"`
 // }
 
-type RequestWithNS struct {
-	NamespaceID uuid.UUID `json:"namespace_id"`
-}
+// type RequestWithNS struct {
+// 	NamespaceID uuid.UUID `json:"namespace_id"`
+// }
 
-type TicketIDRequest struct {
-	ID uuid.UUID `json:"id" `
-}
-type ResourceUnitType string
-type ResourceUnitStatus string
+// type TicketIDRequest struct {
+// 	ID uuid.UUID `json:"id" `
+// }
+// type ResourceUnitType string
+// type ResourceUnitStatus string
 
-const (
-    ResourceUnitCompute ResourceUnitType = "compute"
-    ResourceUnitStorage ResourceUnitType = "storage"
-    ResourceUnitNetwork ResourceUnitType = "network"
-    ResourceUnitService ResourceUnitType = "service"
+// const (
+//     ResourceUnitCompute ResourceUnitType = "compute"
+//     ResourceUnitStorage ResourceUnitType = "storage"
+//     ResourceUnitNetwork ResourceUnitType = "network"
+//     ResourceUnitService ResourceUnitType = "service"
 
-    ResourceUnitAllocated   ResourceUnitStatus = "allocated"
-    ResourceUnitProvisioned ResourceUnitStatus = "provisioned"
-    ResourceUnitUnallocated ResourceUnitStatus = "unallocated"
-)
+//     ResourceUnitAllocated   ResourceUnitStatus = "allocated"
+//     ResourceUnitProvisioned ResourceUnitStatus = "provisioned"
+//     ResourceUnitUnallocated ResourceUnitStatus = "unallocated"
+// )

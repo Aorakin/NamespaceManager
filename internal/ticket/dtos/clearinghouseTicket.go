@@ -1,11 +1,10 @@
 package dtos
 
-import "time"
+import (
+	"time"
 
-type ResourceDTO struct {
-	ID       string `json:"resource_id"`
-	Quantity int    `json:"quantity"`
-}
+	"github.com/NamespaceManager/internal/models"
+)
 
 type TicketDTO struct {
 	ID             string        `json:"id"`
@@ -22,10 +21,7 @@ type TicketDTO struct {
 	Resources      []ResourceDTO `json:"resources"`
 }
 
-type RequestTicketDTO struct {
-	Name       	string 				`json:"name" binding:"required"`
-	NamespaceID string 				`json:"namespace_id" binding:"required"`
-	QuotaID			string 				`json:"quota_id" binding:"required"`
-	Resources   []ResourceDTO `json:"resources" binding:"required"`
-	Duration   	int    				`json:"duration" binding:"required"`
+type GliderTicketResponse struct {
+	Ticket    models.GliderTicket `json:"ticket"`
+	Signature string              `json:"signature"`
 }
