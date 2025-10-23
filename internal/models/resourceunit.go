@@ -39,7 +39,7 @@ type LeaseTimeInterface interface {
 	Update()
 }
 
-type ResourceUnitType string
+// type ResourceUnitType string
 type ResourceUnitStatus string
 
 const (

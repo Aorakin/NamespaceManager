@@ -41,7 +41,7 @@ type User struct {
 	Email         string         `gorm:"not null;unique" json:"email" validate:"required,email"`
 	Password      string         `gorm:"" json:"password,omitempty" validate:"omitempty,min=8"` // Made optional for OAuth users
 	Role          UserRole       `gorm:"type:varchar(50);default:'user'" json:"role"`
-	Namespaces    []*Namespace   `gorm:"many2many:user_namespaces;" json:"namespace"`
+	// Namespaces    []*Namespace   `gorm:"many2many:user_namespaces;" json:"namespace"`
 	UserProviders []UserProvider `gorm:"foreignKey:UserID" json:"providers,omitempty"`
 }
 
