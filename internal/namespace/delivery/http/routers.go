@@ -17,7 +17,9 @@ func MapNSRoutes(NSGroup *gin.RouterGroup, nsHandler interfaces.NSHandler) {
 	NSGroup.GET("/namespaceUsage/:ns_id", nsHandler.GetNamespaceUsageByNamespaceID())
 
 	NSGroup.GET("/quota/:ns_id", nsHandler.GetQuotaByNamespaceID())
+	NSGroup.GET("/pool/:pool_id", nsHandler.GetResourcesPoolDetail())
 	NSGroup.GET("/quotaUsage/:quota_id/:ns_id", nsHandler.GetQuotaUsageByNamespaceID())
 
 	NSGroup.GET("/resource/:resource_id", nsHandler.GetResource())
+
 }

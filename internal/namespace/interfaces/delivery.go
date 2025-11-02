@@ -12,4 +12,5 @@ type NSHandler interface {
 	GetNamespaceUsageByNamespaceID() gin.HandlerFunc
 	GetQuotaUsageByNamespaceID() gin.HandlerFunc
 	GetResource() gin.HandlerFunc
+	GetResourcesPoolDetail() gin.HandlerFunc
 }

@@ -216,3 +216,24 @@ func (h NSHandlers) GetResource() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"resource": resource})
 	}
 }
+func (h NSHandlers) GetResourcesPoolDetail() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		poolID := c.Param("pool_id")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/pool/" + poolID
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var pool dtos.ResourcesPoolDetailDTO
+		if err := json.Unmarshal(body, &pool); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse resource pool"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"resourcePool": pool})
+	}
+}

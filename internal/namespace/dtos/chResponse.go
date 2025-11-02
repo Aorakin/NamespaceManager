@@ -7,6 +7,7 @@ type ProjectDTO struct {
 	Description    string `json:"description"`
 	OrganizationID string `json:"organization_id"`
 }
+
 // NamespaceDTO represents a namespace with its details
 type NamespaceDTO struct {
 	ID               string             `json:"id"`
@@ -23,15 +24,16 @@ type NamespaceMembers struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
+
 // QuotaDTO represents quota details for a namespace
 type QuotaDTO struct {
-	ID             string     `json:"id"`
-	Name           string     `json:"name"`
-	Description    string     `json:"description"`
-	ProjectID      string     `json:"project_id"`
-	ProjectQuotaID string     `json:"project_quota_id"`
-	ResourcePoolID string     `json:"resource_pool_id"`
-	Resources      []QuotaResource `json:"resources"`
+	ID               string          `json:"id"`
+	Name             string          `json:"name"`
+	ResourcePoolID   string          `json:"resource_pool_id"`
+	ResourcePoolName string          `json:"resource_pool_name"`
+	OrganizationName string          `json:"organization_name"`
+	ProjectID        string          `json:"project_id"`
+	Resources        []QuotaResource `json:"resources"`
 }
 type QuotaResource struct {
 	ID                 string           `json:"id"`
@@ -46,6 +48,7 @@ type ResourceProperty struct {
 	Price       int64  `json:"price"`
 	MaxDuration int64  `json:"max_duration"`
 }
+
 // UsageDTO represents usage details for a project or namespace
 type UsageDTO struct {
 	Usage []UsageDetail `json:"usage"`
@@ -56,17 +59,24 @@ type UsageDetail struct {
 	Quota  int64  `json:"quota"`
 	Usage  int64  `json:"usage"`
 }
+
 // ResourceDTO represents a resource with its details
 type ResourceDTO struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Quantity       int64  `json:"quantity"`
-	ResourceTypeID string `json:"resource_type_id"`
+	ID             string       `json:"id"`
+	Name           string       `json:"name"`
+	Quantity       int64        `json:"quantity"`
+	ResourceTypeID string       `json:"resource_type_id"`
 	ResourceType   ResourceType `json:"resource_type"`
-	ResourcePoolID string `json:"resource_pool_id"`
+	ResourcePoolID string       `json:"resource_pool_id"`
 }
 type ResourceType struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Unit string `json:"unit"`
+}
+
+type ResourcesPoolDetailDTO struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	OrganizationID string `json:"organization_id"`
 }
