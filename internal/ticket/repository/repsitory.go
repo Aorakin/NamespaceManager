@@ -62,35 +62,6 @@ func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, er
 	return tickets, nil
 }
 
-func (r *TicketRepository) UpsertTicketFromCH(ticketreq *models.Ticket) error {
-	// First, try to find existing ticket by ExternalID
-	// var existingTicket models.Ticket
-	// if err := r.db.Preload("Resources").Where("external_id = ?", ticketreq.ExternalID).First(&existingTicket).Error; err == nil {
-	//     // Ticket exists, update it
-	//     ticketreq.ID = existingTicket.ID // Use existing ID
-
-	//     // Delete existing resources first to avoid duplicates
-	//     if err := r.db.Where("ticket_id = ?", existingTicket.ID).Delete(&models.Resource{}).Error; err != nil {
-	//         return err
-	//     }
-
-	//     // Now save the ticket with new resources
-	//     return r.db.Save(ticketreq).Error
-	// }
-	// // Ticket doesn't exist, create new one
-	return r.db.Create(ticketreq).Error
-}
-
-func (r *TicketRepository) GetTicketNS(userID uuid.UUID, namespaceID uuid.UUID) ([]models.GliderTicket, error) {
-	var tickets []models.GliderTicket
-	// if err := r.db.Preload("Spec.Resources").
-	// 	Where("owner_id = ? AND namespace_id = ?", userID, namespaceID).
-	// 	Find(&tickets).Error; err != nil {
-	// 	return nil, err
-	// }
-	return tickets, nil
-}
-
 func (r *TicketRepository) CreateTask(task models.Task) error {
 	if err := r.db.Create(&task).Error; err != nil {
 		return err
@@ -112,31 +83,6 @@ func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData mo
 		return fmt.Errorf("no ticket found with ID: %s", ticketID)
 	}
 	return nil
-}
-
-func (r *TicketRepository) Delete(ticketID uuid.UUID) error {
-	var ticket models.GliderTicket
-	if err := r.db.First(&ticket, ticketID).Error; err != nil {
-		return err
-	}
-
-	if err := r.db.Where("ticket_id = ?", ticketID).Delete(&models.GliderSpec{}).Error; err != nil {
-		return err
-	}
-
-	if err := r.db.Delete(&ticket).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *TicketRepository) TicketHis(userID uuid.UUID) ([]models.GliderTicket, error) {
-	var tickets []models.GliderTicket
-	if err := r.db.Preload("Spec.Resources").Find(&tickets, "owner_id = ?", userID).Error; err != nil {
-		return nil, err
-	}
-	return tickets, nil
 }
 
 func (r *TicketRepository) GetTicketByGliderTicketID(ID uuid.UUID) (models.Ticket, error) {
@@ -176,13 +122,6 @@ func (r *TicketRepository) ClearTaskID(ticketID uuid.UUID) error {
 	result := r.db.Model(&models.GliderTicket{}).Where("id = ?", ticketID).Update("task_id", nil)
 	if result.Error != nil {
 		return result.Error
-	}
-	return nil
-}
-
-func (r *TicketRepository) RemoveTask(taskID uuid.UUID) error {
-	if err := r.db.Where("id = ?", taskID).Delete(&models.Task{}).Error; err != nil {
-		return err
 	}
 	return nil
 }

@@ -33,31 +33,6 @@ func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid
 	return nil
 }
 
-// func (u *TicketUsecase) GetTicketNS(userID uuid.UUID, namespaceID uuid.UUID) ([]dtos.TicketResponse, error) {
-// 	tickets, err := u.TicketRepository.GetTicketNS(userID, namespaceID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	ticketResponses := u.FormatTicketRes(tickets)
-// 	return ticketResponses, nil
-// }
-
-func (u *TicketUsecase) UpdateStatus(ticketID uuid.UUID, status models.StatusTicket) error {
-	return u.TicketRepository.UpdateTicketStatus(ticketID, status)
-}
-
-func (u *TicketUsecase) Delete(ticketID uuid.UUID) error {
-	return u.TicketRepository.Delete(ticketID)
-}
-
-// func (u *TicketUsecase) TicketHis(userID uuid.UUID) ([]dtos.TicketResponse, error) {
-// 	tickets, err := u.TicketRepository.TicketHis(userID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	ticketResponses := u.FormatTicketRes(tickets)
-// 	return ticketResponses, nil
-// }
 
 func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID) ([]models.GliderTicket, error) {
 	tickets := make([]models.GliderTicket, len(ticketIDs))
@@ -221,47 +196,6 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interfa
 // 	return ticketResponses
 // }
 
-func CreateTicketToGliderTicket(req dtos.CreateTicket, ownerID uuid.UUID) *models.GliderTicket {
-	// ticketID := uuid.New()
-
-	// gliderSpecs := make([]models.GliderSpec, 0, len(req.Spec))
-	// for _, specReq := range req.Spec {
-	// 	specID := uuid.New()
-	// 	specResources := make([]models.SpecResource, 0, len(specReq.Resources))
-
-	// 	for _, resReq := range specReq.Resources {
-	// 		specResources = append(specResources, models.SpecResource{
-	// 			ID:       uuid.New(),
-	// 			Name:     resReq.Name,
-	// 			Quantity: resReq.Quantity,
-	// 			Unit:     resReq.Unit,
-	// 			SpecID:   specID,
-	// 		})
-	// 	}
-
-	// 	gliderSpecs = append(gliderSpecs, models.GliderSpec{
-	// 		ID:        specID,
-	// 		TicketID:  ticketID,
-	// 		Type:      specReq.Type,
-	// 		PoolID:    specReq.PoolID,
-	// 		Resources: specResources,
-	// 	})
-	// }
-
-	// return &models.GliderTicket{
-	// 	ID:                ticketID,
-	// 	OwnerID:           ownerID,
-	// 	NamespaceID:       req.NamespaceID,
-	// 	NamespaceURN:      req.NamespaceURN,
-	// 	GlideletURN:       req.GlideletURN,
-	// 	Spec:              gliderSpecs,
-	// 	ReferenceTicketID: req.ReferenceTicketID,
-	// 	RedeemTimeout:     req.RedeemTimeout,
-	// 	Lease:             req.Lease,
-	// 	Signature:         req.Signature,
-	// }
-	return &models.GliderTicket{}
-}
 
 func (u *TicketUsecase) TicketModeltoDTO(tickets []models.Ticket) []dtos.UserTicketResponse {
 	var dtosList []dtos.UserTicketResponse
@@ -279,33 +213,6 @@ func (u *TicketUsecase) TicketModeltoDTO(tickets []models.Ticket) []dtos.UserTic
 
 	return dtosList
 }
-
-// func DTOtoTicketModel(ticket dtos.TicketDTO) models.Ticket {
-
-// 	resources := make([]models.Resource, 0, len(ticket.Resources))
-// 	for _, res := range ticket.Resources {
-// 		resources = append(resources, models.Resource{
-// 			// BaseModel:  models.BaseModel{ID: uuid.New()},
-// 			ExternalID: res.ID,
-// 			Quantity:   res.Quantity,
-// 		})
-// 	}
-// 	ticketModel := models.Ticket{
-// 		ExternalID:     ticket.ID,
-// 		Name:           ticket.Name,
-// 		Status:         ticket.Status,
-// 		StartTime:      ticket.StartTime,
-// 		EndTime:        ticket.EndTime,
-// 		Duration:       ticket.Duration,
-// 		Price:          ticket.Price,
-// 		OwnerID:        ticket.OwnerID,
-// 		NamespaceID:    ticket.NamespaceID,
-// 		ResourcePoolID: ticket.ResourcePoolID,
-// 		QuotaID:        ticket.QuotaID,
-// 		Resources:      resources,
-// 	}
-// 	return ticketModel
-// }
 
 func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]dtos.UserTicketResponse, error) {
 	tickets, err := u.TicketRepository.GetTicketByNamespaceID(namespaceId)

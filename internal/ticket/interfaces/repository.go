@@ -6,21 +6,18 @@ import (
 )
 
 type TicketRepository interface {
+	// ticket
 	Create(*models.Ticket) error
 	GetTicketByNamespaceID(string) ([]models.Ticket, error)
 	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
-	UpsertTicketFromCH(*models.Ticket) error
 	UpdateTicketStatus(uuid.UUID, models.StatusTicket) error
 	GetTicketByGliderTicketID(uuid.UUID) (models.Ticket, error)
-	GetTicketNS(uuid.UUID, uuid.UUID) ([]models.GliderTicket, error)
+	CancelTicket(string) error
+	// task
 	SendRequest(string, interface{}, string) (int, []byte, error)
-	TicketHis(uuid.UUID) ([]models.GliderTicket, error)
-	Delete(uuid.UUID) error
 	CreateTask(models.Task) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
-	RemoveTask(uuid.UUID) error
 	UpdateTaskStatus(uuid.UUID, models.StatusTicket) error
 	GetTasksByID(uuid.UUID) (*models.Task, error)
 	ClearTaskID(uuid.UUID) error
-	CancelTicket(string) error
 }
