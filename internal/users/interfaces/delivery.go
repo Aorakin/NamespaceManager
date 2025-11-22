@@ -9,4 +9,5 @@ type UsersHandlers interface {
 	Register() gin.HandlerFunc
 	Logout() gin.HandlerFunc
 	Me() gin.HandlerFunc
+	GetAccessTokenFromCode() gin.HandlerFunc
 }

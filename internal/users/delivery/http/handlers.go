@@ -1,8 +1,10 @@
 package http
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/users/dtos"
@@ -23,7 +25,7 @@ func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandl
 	}
 }
 
-func (h *UsersHandlers) Me() gin.HandlerFunc{
+func (h *UsersHandlers) Me() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := utils.GetSession(c, "userID").(uuid.UUID)
 		user, err := h.usersUsecase.GetUserByID(userID.String())
@@ -68,7 +70,7 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "Session save failed"})
 					return
 				}
-				
+
 				// c.JSON(http.StatusOK, gin.H{
 				// 	"message": "Login successful",
 				// 	"user": gin.H{
@@ -166,5 +168,26 @@ func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		utils.ClearSession(c)
 		c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+	}
+}
+func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		code := c.Param("code")
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/callback/google?code=" + code
+		status, body, err := utils.SendRequest(url, nil, "GET")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var token map[string]interface{}
+		if err := json.Unmarshal(body, &token); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token"})
+			return
+		}
+		c.JSON(http.StatusOK, token)
 	}
 }
