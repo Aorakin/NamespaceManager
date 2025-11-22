@@ -8,6 +8,7 @@ import (
 )
 
 func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHandlers) {
+	usersGroup.GET("/access-token", usersHandler.GetAccessTokenFromCode())
 	usersGroup.GET("/auth/google", usersHandler.LoginWithGoogle())
 	usersGroup.GET("/auth/callback/google", usersHandler.Callback())
 	usersGroup.POST("/register", usersHandler.Register())
@@ -15,7 +16,5 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.POST("/podStatus", utils.TicketStatus())
 	usersGroup.GET("/logout", usersHandler.Logout()).Use(middleware.AuthMiddleware())
 	usersGroup.GET("/me", usersHandler.Me()).Use(middleware.AuthMiddleware())
-
-	usersGroup.GET("/accessTokens", usersHandler.GetAccessTokenFromCode())
 
 }

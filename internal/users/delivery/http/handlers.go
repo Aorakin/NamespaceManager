@@ -188,6 +188,21 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token"})
 			return
 		}
-		c.JSON(http.StatusOK, token)
+
+		accessToken, ok := token["access_token"].(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found"})
+			return
+		}
+		refreshToken, ok := token["refresh_token"].(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Refresh token not found"})
+			return
+		}
+
+		c.SetCookie("access_token", accessToken, 3600, "/", ".onepointfive.life", true, true)
+		c.SetCookie("refresh_token", refreshToken, 86400, "/", ".onepointfive.life", true, true)
+
+		c.JSON(http.StatusOK, gin.H{"message": "Tokens set successfully"})
 	}
 }
