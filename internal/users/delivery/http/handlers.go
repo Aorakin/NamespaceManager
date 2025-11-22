@@ -172,8 +172,8 @@ func (h *UsersHandlers) Logout() gin.HandlerFunc {
 }
 func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		code := c.Param("code")
-		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/callback/google?code=" + code
+		rawQuery := c.Request.URL.RawQuery
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/callback/google?" + rawQuery
 		status, body, err := utils.SendRequest(url, nil, "GET")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

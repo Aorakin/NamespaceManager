@@ -16,6 +16,6 @@ func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHa
 	usersGroup.GET("/logout", usersHandler.Logout()).Use(middleware.AuthMiddleware())
 	usersGroup.GET("/me", usersHandler.Me()).Use(middleware.AuthMiddleware())
 
-	usersGroup.GET("/accessTokens/:code", usersHandler.GetAccessTokenFromCode())
+	usersGroup.GET("/accessTokens", usersHandler.GetAccessTokenFromCode())
 
 }
