@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/NamespaceManager/internal/auth"
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/users/dtos"
 	"github.com/NamespaceManager/internal/users/interfaces"
@@ -27,13 +28,12 @@ func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandl
 
 func (h *UsersHandlers) Me() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID := utils.GetSession(c, "userID").(uuid.UUID)
-		user, err := h.usersUsecase.GetUserByID(userID.String())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+		userID := c.MustGet("userID").(uuid.UUID)
+		if userID == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 			return
 		}
-		c.JSON(http.StatusOK, user)
+		c.JSON(http.StatusOK, userID)
 	}
 }
 
@@ -197,6 +197,19 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		refreshToken, ok := token["refresh_token"].(string)
 		if !ok {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Refresh token not found"})
+			return
+		}
+		
+		userID, firstName, lastName, email, err := auth.ExtractDataFromToken(accessToken)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract user data from token"})
+			return
+		}
+		log.Printf("UserID: %s, FirstName: %s, LastName: %s, Email: %s", userID, firstName, lastName, email)
+
+		_, err = h.usersUsecase.FindOrCreateUser(userID, email, firstName, lastName)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find or create user"})
 			return
 		}
 

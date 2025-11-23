@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
-var client = &http.Client{Timeout: 10 * time.Second}
-
-func SendRequest(url string, payload interface{}, method string) (int, []byte, error) {
+func SendRequestWithAccessToken(url string, payload interface{}, method string, accessToken string) (int, []byte, error) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to marshal JSON: %w", err)
@@ -22,12 +19,9 @@ func SendRequest(url string, payload interface{}, method string) (int, []byte, e
 		return 0, nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
-	// sessionCookie := os.Getenv("SESSION_COOKIE")
-
-	// if sessionCookie != "" {
-	// 	req.Header.Set("Cookie", sessionCookie)
-	// }
+	if accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {

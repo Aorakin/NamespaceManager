@@ -73,3 +73,7 @@ func (u *UsersUsecase) Login(username string, password string) (*models.User, er
 
 	return user, nil
 }
+
+func (u *UsersUsecase) FindOrCreateUser(id uuid.UUID, email, firstName, lastName string) (*models.User, error) {
+	return u.usersRepository.FindOrCreateUser(id, email, firstName, lastName)
+}
