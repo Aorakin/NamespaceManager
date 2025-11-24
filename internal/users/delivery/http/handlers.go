@@ -219,3 +219,70 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens set successfully"})
 	}
 }
+
+func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var refresh_token struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.ShouldBindJSON(&refresh_token); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		}
+
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/refresh-token"
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", refresh_token.RefreshToken)
+		log.Println("Refresh Token Response:", string(body))
+		log.Println("Status Code:", status)
+		log.Println("Error:", err)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if status != http.StatusOK {
+			c.JSON(status, gin.H{"error": string(body)})
+			return
+		}
+		var token map[string]interface{}
+		if err := json.Unmarshal(body, &token); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token"})
+			return
+		}
+
+		accessToken, ok := token["access_token"].(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found"})
+			return
+		}
+		c.SetCookie("access_token", accessToken, 3600, "/", ".onepointfive.life", true, true)
+
+		c.JSON(http.StatusOK, gin.H{"message": "Tokens refreshed successfully"})
+	}
+}
+
+func (h *UsersHandlers) CheckAuthStatus() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		accessToken, err := c.Cookie("access_token")
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
+			return
+		}
+
+		// Validate the token
+		userID, firstName, lastName, email, err := auth.ExtractDataFromToken(accessToken)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": true,
+			"user": gin.H{
+				"id":        userID,
+				"firstName": firstName,
+				"lastName":  lastName,
+				"email":     email,
+			},
+		})
+	}
+}
