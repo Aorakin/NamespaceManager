@@ -28,12 +28,21 @@ func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandl
 
 func (h *UsersHandlers) Me() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userData := map[string]interface{}{}
 		userID := c.MustGet("userID").(uuid.UUID)
+		firstName := c.MustGet("firstname").(string)
+		lastName := c.MustGet("lastname").(string)
+		email := c.MustGet("email").(string)
+		log.Printf("Me Handler - UserID: %s, FirstName: %s, LastName: %s, Email: %s", userID, firstName, lastName, email)
+
+		userData["id"] = userID
+		userData["username"] = firstName + " " + lastName
+		userData["email"] = email
 		if userID == uuid.Nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 			return
 		}
-		c.JSON(http.StatusOK, userID)
+		c.JSON(http.StatusOK, userData)
 	}
 }
 
@@ -166,7 +175,12 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 // @Router /users/logout [post]
 func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		utils.ClearSession(c)
+		// utils.ClearSession(c)
+		// c.SetCookie("access_token", "", -1, "/", "localhost", true, true)
+		// c.SetCookie("refresh_token", "", -1, "/", "localhost", true, true)
+		c.SetCookie("access_token", "", -1, "/", ".onepointfive.life", true, true)
+		c.SetCookie("refresh_token", "", -1, "/", ".onepointfive.life", true, true)
+
 		c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 	}
 }
@@ -199,7 +213,7 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Refresh token not found"})
 			return
 		}
-		
+
 		userID, firstName, lastName, email, err := auth.ExtractDataFromToken(accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract user data from token"})
@@ -222,19 +236,13 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 
 func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var refresh_token struct {
-			RefreshToken string `json:"refresh_token"`
-		}
-		if err := c.ShouldBindJSON(&refresh_token); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		refreshTokenCookie, err := c.Cookie("refresh_token")
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found"})
 			return
 		}
-
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/refresh-token"
-		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", refresh_token.RefreshToken)
-		log.Println("Refresh Token Response:", string(body))
-		log.Println("Status Code:", status)
-		log.Println("Error:", err)
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", refreshTokenCookie)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -254,35 +262,9 @@ func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found"})
 			return
 		}
+		// c.SetCookie("access_token", accessToken, 3600, "/", "localhost", true, true)
 		c.SetCookie("access_token", accessToken, 3600, "/", ".onepointfive.life", true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens refreshed successfully"})
-	}
-}
-
-func (h *UsersHandlers) CheckAuthStatus() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		accessToken, err := c.Cookie("access_token")
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
-			return
-		}
-
-		// Validate the token
-		userID, firstName, lastName, email, err := auth.ExtractDataFromToken(accessToken)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"authenticated": true,
-			"user": gin.H{
-				"id":        userID,
-				"firstName": firstName,
-				"lastName":  lastName,
-				"email":     email,
-			},
-		})
 	}
 }

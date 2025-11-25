@@ -11,5 +11,4 @@ type UsersHandlers interface {
 	Me() gin.HandlerFunc
 	GetAccessTokenFromCode() gin.HandlerFunc
 	RefreshAccessToken() gin.HandlerFunc
-	CheckAuthStatus() gin.HandlerFunc
 }

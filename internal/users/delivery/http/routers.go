@@ -9,8 +9,7 @@ import (
 
 func MapUsersRoutes(usersGroup *gin.RouterGroup, usersHandler interfaces.UsersHandlers) {
 	usersGroup.GET("/access-token", usersHandler.GetAccessTokenFromCode())
-	usersGroup.POST("/auth/refresh-token", usersHandler.RefreshAccessToken())
-	usersGroup.GET("/auth/status", usersHandler.CheckAuthStatus())
+	usersGroup.GET("/auth/refresh-token", usersHandler.RefreshAccessToken())
 	usersGroup.GET("/auth/google", usersHandler.LoginWithGoogle())
 	usersGroup.GET("/auth/callback/google", usersHandler.Callback())
 	usersGroup.POST("/register", usersHandler.Register())

@@ -23,8 +23,9 @@ func NewNSHandler(NSUsecase interfaces.NSUsecase) interfaces.NSHandler {
 func (h NSHandlers) GetProjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/all"
+		accessToken := c.MustGet("accessToken").(string)
 
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		fmt.Println(string(body))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
