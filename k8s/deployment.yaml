@@ -6,8 +6,6 @@ metadata:
   labels:
     app: namespace-manager
 spec:
-  imagePullSecrets:
-    - name: ghcr-secret
   replicas: 3
   selector:
     matchLabels:
@@ -17,6 +15,8 @@ spec:
       labels:
         app: namespace-manager
     spec:
+      imagePullSecrets:
+      - name: ghcr-secret
       containers:
       - name: namespace-manager
         image: aorakin/namespace_manager:v1

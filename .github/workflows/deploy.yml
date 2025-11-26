@@ -44,8 +44,8 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/namespace-manager-deployment \
-        namespace-manager=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-        -n crosscut-dev
+        sed -i "s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
         
-        kubectl rollout status deployment/namespace-manager-deployment -n crosscut-dev
+        kubectl apply -f k8s/deployment.yaml
+
+        kubectl rollout restart deployment/namespace-manager-deployment -n crosscut-dev
