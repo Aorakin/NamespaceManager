@@ -46,8 +46,9 @@ func (h NSHandlers) GetProjects() gin.HandlerFunc {
 func (h NSHandlers) GetProjectDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/" + projectID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -67,9 +68,10 @@ func (h NSHandlers) GetProjectDetail() gin.HandlerFunc {
 func (h NSHandlers) GetNamespacesByProjectID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/all/" + projectID
 
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -90,8 +92,9 @@ func (h NSHandlers) GetNamespacesByProjectID() gin.HandlerFunc {
 func (h NSHandlers) GetNamespacesDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/" + namespaceID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -112,8 +115,9 @@ func (h NSHandlers) GetNamespacesDetail() gin.HandlerFunc {
 func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/quota/namespace/" + namespaceID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -134,8 +138,9 @@ func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 func (h NSHandlers) GetProjectUsageByProjectID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/" + projectID + "/usage"
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -155,8 +160,9 @@ func (h NSHandlers) GetProjectUsageByProjectID() gin.HandlerFunc {
 func (h NSHandlers) GetNamespaceUsageByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/namespaces/" + namespaceID + "/usage"
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -177,8 +183,9 @@ func (h NSHandlers) GetQuotaUsageByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		quotaID := c.Param("quota_id")
 		namespaceID := c.Param("ns_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/quota/" + quotaID + "/usage/" + namespaceID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -198,8 +205,9 @@ func (h NSHandlers) GetQuotaUsageByNamespaceID() gin.HandlerFunc {
 func (h NSHandlers) GetResource() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		resourceID := c.Param("resource_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/" + resourceID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -220,8 +228,9 @@ func (h NSHandlers) GetResource() gin.HandlerFunc {
 func (h NSHandlers) GetResourcesPoolDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		poolID := c.Param("pool_id")
+		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/pool/" + poolID
-		status, body, err := utils.SendRequest(url, nil, "GET")
+		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

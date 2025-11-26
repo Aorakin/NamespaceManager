@@ -3,12 +3,10 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
-	"github.com/NamespaceManager/internal/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -32,7 +30,6 @@ func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid
 	// }
 	return nil
 }
-
 
 func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID) ([]models.GliderTicket, error) {
 	tickets := make([]models.GliderTicket, len(ticketIDs))
@@ -196,7 +193,6 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interfa
 // 	return ticketResponses
 // }
 
-
 func (u *TicketUsecase) TicketModeltoDTO(tickets []models.Ticket) []dtos.UserTicketResponse {
 	var dtosList []dtos.UserTicketResponse
 
@@ -236,21 +232,22 @@ func (u *TicketUsecase) GetUserTickets(ownerID uuid.UUID) ([]dtos.UserTicketResp
 	ticketResponses := u.TicketModeltoDTO(tickets)
 	return ticketResponses, nil
 }
-func (u *TicketUsecase) RequestTicketToCH(ticketReq dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error) {
-	url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
-	status, res, err := utils.SendRequest(url, ticketReq, "POST")
-	fmt.Println("error", err)
-	fmt.Println("status", status)
-	fmt.Println("res", string(res))
-	if err != nil {
-		return 0, dtos.GliderTicketResponse{}, err
-	}
-	var resTicket dtos.GliderTicketResponse
-	if err := json.Unmarshal(res, &resTicket); err != nil {
-		return 0, dtos.GliderTicketResponse{}, err
-	}
-	return status, resTicket, nil
-}
+
+//	func (u *TicketUsecase) RequestTicketToCH(ticketReq dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error) {
+//		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
+//		status, res, err := utils.SendRequest(url, ticketReq, "POST")
+//		fmt.Println("error", err)
+//		fmt.Println("status", status)
+//		fmt.Println("res", string(res))
+//		if err != nil {
+//			return 0, dtos.GliderTicketResponse{}, err
+//		}
+//		var resTicket dtos.GliderTicketResponse
+//		if err := json.Unmarshal(res, &resTicket); err != nil {
+//			return 0, dtos.GliderTicketResponse{}, err
+//		}
+//		return status, resTicket, nil
+//	}
 func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name string, ownerID uuid.UUID) error {
 	ticket := models.Ticket{
 		Name:         name,
@@ -268,21 +265,21 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 	return nil
 }
 
-func (u *TicketUsecase) GetTicketFromCH(ticketId string) (int, dtos.GliderTicketResponse, error) {
-	url := fmt.Sprintf("%s/tickets/%s", os.Getenv("CLEARINGHOUSE_URL"), ticketId)
+// func (u *TicketUsecase) GetTicketFromCH(ticketId string) (int, dtos.GliderTicketResponse, error) {
+// 	url := fmt.Sprintf("%s/tickets/%s", os.Getenv("CLEARINGHOUSE_URL"), ticketId)
 
-	status, body, err := utils.SendRequest(url, nil, "GET")
-	if err != nil {
-		return 0, dtos.GliderTicketResponse{}, err
-	}
-	var ticket dtos.GliderTicketResponse
-	err = json.Unmarshal(body, &ticket)
-	if err != nil {
-		return 0, dtos.GliderTicketResponse{}, fmt.Errorf("error : Failed to parse response: %w", err)
-	}
+// 	status, body, err := utils.SendRequest(url, nil, "GET")
+// 	if err != nil {
+// 		return 0, dtos.GliderTicketResponse{}, err
+// 	}
+// 	var ticket dtos.GliderTicketResponse
+// 	err = json.Unmarshal(body, &ticket)
+// 	if err != nil {
+// 		return 0, dtos.GliderTicketResponse{}, fmt.Errorf("error : Failed to parse response: %w", err)
+// 	}
 
-	return status, ticket, nil
-}
+// 	return status, ticket, nil
+// }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
 	updatedTaskIDs := make(map[uuid.UUID]bool)
@@ -362,15 +359,15 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 }
 
 func (u *TicketUsecase) CancelTicket(ticketID string) error {
-	url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + ticketID + "/cancel"
-	status, _, err := utils.SendRequest(url, nil, "PATCH")
-	if err != nil {
-		return err
-	}
-	if status != 200 {
-		return fmt.Errorf("failed to cancel ticket in Clearinghouse, status code: %d", status)
-	}
-	err = u.TicketRepository.CancelTicket(ticketID)
+	// url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + ticketID + "/cancel"
+	// status, _, err := utils.SendRequest(url, nil, "PATCH")
+	// if err != nil {
+	// 	return err
+	// }
+	// if status != 200 {
+	// 	return fmt.Errorf("failed to cancel ticket in Clearinghouse, status code: %d", status)
+	// }
+	err := u.TicketRepository.CancelTicket(ticketID)
 	if err != nil {
 		return err
 	}
