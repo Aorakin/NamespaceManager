@@ -6,6 +6,8 @@ metadata:
   labels:
     app: namespace-manager
 spec:
+  imagePullSecrets:
+    - name: ghcr-secret
   replicas: 3
   selector:
     matchLabels:
