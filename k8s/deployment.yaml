@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: namespace-manager-deployment
+  namespace: crosscut-dev
+  labels:
+    app: namespace-manager
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: namespace-manager
+  template:
+    metadata:
+      labels:
+        app: namespace-manager
+    spec:
+      containers:
+      - name: namespace-manager
+        image: aorakin/namespace_manager:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: namespace-manager-config
+        - secretRef:
+            name: namespace-manager-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: namespace-manager-service
+  namespace: crosscut-dev
+spec:
+  type: LoadBalancer
+  selector:
+    app: namespace-manager
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
