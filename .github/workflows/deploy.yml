@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: Aorakin/NamespaceManager
+  IMAGE_NAME: aorakin/namespacemanager
 
 jobs:
   build-and-push:
