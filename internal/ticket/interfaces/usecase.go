@@ -8,13 +8,13 @@ import (
 
 type TicketUsecase interface {
 	HandleTicketCallback(dtos.CreateTicket, uuid.UUID) error
-	ApporveTicket(uuid.UUID) (models.Ticket, error)
+	ApporveTicket(uuid.UUID) (dtos.TicketReq, error)
 	SendTicket([]uuid.UUID) (int, map[string]interface{}, error)
 	UseTicket([]uuid.UUID) ([]models.GliderTicket, error)
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
 	StopTask(uuid.UUID) error
-	
+
 	// GetTicketFromCH(string) (int, dtos.GliderTicketResponse, error)
 	// RequestTicketToCH(dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error)
 	GetTicketByNamespaceID(string) ([]dtos.UserTicketResponse, error)
@@ -22,4 +22,5 @@ type TicketUsecase interface {
 	SaveTicket(dtos.GliderTicketResponse, string, uuid.UUID) error
 	UpdateTicketStatusFromGlidelet([]dtos.StatusRes) error
 	CancelTicket(string) error
+	ConvertTicketToTicketRequest(models.Ticket) (dtos.TicketReq, error)
 }

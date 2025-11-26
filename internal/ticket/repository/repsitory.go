@@ -19,7 +19,7 @@ type TicketRepository struct {
 	db *gorm.DB
 }
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var client = &http.Client{Timeout: 10 * time.Minute}
 
 func NewTicketRepository(db *gorm.DB) interfaces.TicketRepository {
 	return &TicketRepository{db: db}

@@ -3,6 +3,8 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -52,19 +54,35 @@ func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID) ([]models.GliderTicket,
 
 func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.UUID) error {
 	var tickets []models.Ticket
+	var ticketIDs []uuid.UUID
+
 	for _, ticketID := range taskReq.Tickets {
 		ticket, err := u.TicketRepository.GetTicketByGliderTicketID(ticketID)
 		if err != nil {
 			return err
 		}
 		tickets = append(tickets, ticket)
+		ticketIDs = append(ticketIDs, ticketID)
 	}
+
+	// Send tickets to external service
+	status, response, err := u.SendTicket(ticketIDs)
+	if err != nil {
+		return fmt.Errorf("failed to send tickets: %w", err)
+	}
+	log.Printf("Ticket send response: %v", response)
+	// You can check the status and response if needed
+	if status != 200 {
+		return fmt.Errorf("failed to send tickets, status code: %d", status)
+	}
+
 	task := models.Task{
 		Title:   taskReq.Title,
 		Tickets: tickets,
 		OwnerID: ownerID,
 		Status:  models.StatusPending,
 	}
+
 	return u.TicketRepository.CreateTask(task)
 }
 
@@ -123,20 +141,55 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 // 	return nil
 // }
 
-func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (models.Ticket, error) {
+func (u *TicketUsecase) ConvertTicketToTicketRequest(t models.Ticket) (dtos.TicketReq, error) {
+	// Convert poolID (string) to uuid.UUID
+	poolID, err := uuid.Parse(t.GliderTicket.Spec.PoolID)
+	if err != nil {
+		return dtos.TicketReq{}, fmt.Errorf("invalid pool_id: %w", err)
+	}
+
+	// Convert resources
+	var resources []dtos.SpecResource
+	for _, r := range t.GliderTicket.Spec.Resources {
+		resources = append(resources, dtos.SpecResource{
+			Name:     r.Name,
+			Quantity: int64(r.Quantity),
+			Unit:     r.Unit,
+		})
+	}
+
+	req := dtos.TicketReq{
+		GlideletURN:       t.GliderTicket.GlideletURN,
+		ID:                t.GliderTicket.ID,
+		Lease:             fmt.Sprintf("%d", t.GliderTicket.Lease),
+		NamespaceURN:      t.GliderTicket.NamespaceURN,
+		RedeemTimeout:     fmt.Sprintf("%d", t.GliderTicket.RedeemTimeout),
+		ReferenceTicketID: t.GliderTicket.ReferenceTicketID,
+		Signature:         t.Signature,
+		Spec: dtos.GliderSpec{
+			Type:      dtos.ResourceUnitType(t.GliderTicket.Spec.Type),
+			PoolID:    poolID,
+			Resources: resources,
+		},
+	}
+
+	return req, nil
+}
+
+func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (dtos.TicketReq, error) {
 	ticket, err := u.TicketRepository.GetTicketByGliderTicketID(ticketID)
 	if err != nil {
-		return models.Ticket{}, err
+		return dtos.TicketReq{}, err
 	}
-	// if ticket.Status != "ready" {
-	// 	return models.GliderTicket{}, fmt.Errorf("ticket not ready")
-	// }
-	//check ticket with passport
-	return ticket, nil
+	ticketReq, err := u.ConvertTicketToTicketRequest(ticket)
+	if err != nil {
+		return dtos.TicketReq{}, err
+	}
+	return ticketReq, nil
 }
 
 func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interface{}, error) {
-	var tickets []models.Ticket
+	var tickets []dtos.TicketReq
 	fmt.Println("payload", payload)
 	for _, ticketID := range payload {
 		ticket, err := u.ApporveTicket(ticketID)
@@ -146,8 +199,11 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interfa
 		tickets = append(tickets, ticket)
 	}
 	fmt.Println(tickets)
-	url := "http://host.docker.internal:5000/api/v1/ticket/createList"
+	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/createList"
 	status, body, err := u.TicketRepository.SendRequest(url, tickets, "POST")
+	log.Printf("status: %d, body: %s", status, string(body))
+	
+
 	if err != nil {
 		return 0, nil, err
 	}
@@ -156,6 +212,7 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interfa
 	if err != nil {
 		return 0, nil, fmt.Errorf("error : Failed to parse response: %w", err)
 	}
+	log.Printf("response: %v", jsonResponse)
 
 	return status, jsonResponse, nil
 }
