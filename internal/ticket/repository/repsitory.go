@@ -61,6 +61,13 @@ func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, er
 	}
 	return tickets, nil
 }
+func (r *TicketRepository) Update(ticket models.Ticket) error {
+	if err := r.db.Save(&ticket).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 
 func (r *TicketRepository) CreateTask(task models.Task) error {
 	if err := r.db.Create(&task).Error; err != nil {

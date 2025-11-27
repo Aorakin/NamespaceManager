@@ -8,8 +8,8 @@ import (
 
 type TicketUsecase interface {
 	HandleTicketCallback(dtos.CreateTicket, uuid.UUID) error
-	ApporveTicket(uuid.UUID) (dtos.TicketReq, error)
-	SendTicket([]uuid.UUID) (int, map[string]interface{}, error)
+	ApproveTicket(uuid.UUID) (dtos.TicketReq, error)
+	SendTicket([]uuid.UUID) (int,*dtos.CodeServerResponse, error)
 	UseTicket([]uuid.UUID) ([]models.GliderTicket, error)
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Task, error)

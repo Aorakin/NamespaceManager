@@ -11,6 +11,7 @@ type TicketRepository interface {
 	GetTicketByNamespaceID(string) ([]models.Ticket, error)
 	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
 	UpdateTicketStatus(uuid.UUID, models.StatusTicket) error
+	Update(ticket models.Ticket) error
 	GetTicketByGliderTicketID(uuid.UUID) (models.Ticket, error)
 	CancelTicket(string) error
 	// task

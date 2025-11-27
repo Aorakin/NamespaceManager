@@ -176,7 +176,7 @@ func (u *TicketUsecase) ConvertTicketToTicketRequest(t models.Ticket) (dtos.Tick
 	return req, nil
 }
 
-func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (dtos.TicketReq, error) {
+func (u *TicketUsecase) ApproveTicket(ticketID uuid.UUID) (dtos.TicketReq, error) {
 	ticket, err := u.TicketRepository.GetTicketByGliderTicketID(ticketID)
 	if err != nil {
 		return dtos.TicketReq{}, err
@@ -188,11 +188,11 @@ func (u *TicketUsecase) ApporveTicket(ticketID uuid.UUID) (dtos.TicketReq, error
 	return ticketReq, nil
 }
 
-func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interface{}, error) {
+func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerResponse, error) {
 	var tickets []dtos.TicketReq
 	fmt.Println("payload", payload)
 	for _, ticketID := range payload {
-		ticket, err := u.ApporveTicket(ticketID)
+		ticket, err := u.ApproveTicket(ticketID)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -202,19 +202,31 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, map[string]interfa
 	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/createList"
 	status, body, err := u.TicketRepository.SendRequest(url, tickets, "POST")
 	log.Printf("status: %d, body: %s", status, string(body))
-	
 
 	if err != nil {
 		return 0, nil, err
 	}
-	var jsonResponse map[string]interface{}
+	var jsonResponse dtos.CodeServerResponse
 	err = json.Unmarshal(body, &jsonResponse)
 	if err != nil {
 		return 0, nil, fmt.Errorf("error : Failed to parse response: %w", err)
 	}
 	log.Printf("response: %v", jsonResponse)
 
-	return status, jsonResponse, nil
+	for _, res := range jsonResponse.TicketResponse {
+		ticket, err := u.TicketRepository.GetTicketByGliderTicketID(res.TicketID)
+		if err != nil {
+			return 0, nil, err
+		}
+		ticket.URL = res.URL
+		ticket.Password = res.Password
+		err = u.TicketRepository.Update(ticket)
+		if err != nil {
+			return 0, nil, err
+		}
+	}
+
+	return status, &jsonResponse, nil
 }
 
 // func (u *TicketUsecase) SetPayload(ticket models.GliderTicket) (*dtos.Payload, error) {

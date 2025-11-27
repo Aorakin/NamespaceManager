@@ -17,6 +17,8 @@ type Ticket struct {
 	Status       StatusTicket     `json:"status"`
 	TaskID       *uuid.UUID       `gorm:"type:uuid" json:"task_id"`
 	OwnerID      uuid.UUID        `gorm:"type:uuid" json:"owner_id"`
+	URL          string           `json:"url"`
+	Password     string           `json:"password"`
 }
 
 func (t *Ticket) BeforeCreate(tx *gorm.DB) (err error) {
