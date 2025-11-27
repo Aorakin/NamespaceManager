@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 
 	"github.com/NamespaceManager/config"
@@ -27,11 +28,21 @@ func NewApp(postgresDB *gorm.DB) *App {
 		postgresDB: postgresDB,
 	}
 
+	// Add request logging middleware
+	app.gin.Use(gin.Logger())
+
 	// Configure CORS
 	app.gin.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return strings.HasSuffix(origin, ".onepointfive.life") ||
-				origin == "https://onepointfive.life" || origin == "http://onepointfive.life"
+			// Parse the origin URL to extract the host
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			host := u.Host
+
+			// Allow all subdomains of onepointfive.life
+			return strings.HasSuffix(host, "onepointfive.life")
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
