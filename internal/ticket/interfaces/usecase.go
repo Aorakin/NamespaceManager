@@ -13,7 +13,6 @@ type TicketUsecase interface {
 	UseTicket([]uuid.UUID) ([]models.GliderTicket, error)
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
-	StopTask(uuid.UUID) error
 
 	// GetTicketFromCH(string) (int, dtos.GliderTicketResponse, error)
 	// RequestTicketToCH(dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error)
@@ -24,5 +23,5 @@ type TicketUsecase interface {
 	CancelTicket(string) error
 	ConvertTicketToTicketRequest(models.Ticket) (dtos.TicketReq, error)
 
-	GetStopTaskPayload(userID uuid.UUID, taskID uuid.UUID) (uuid.UUIDs, error)
+	StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error)
 }

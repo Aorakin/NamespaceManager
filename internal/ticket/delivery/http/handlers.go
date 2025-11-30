@@ -67,20 +67,13 @@ func (h *TicketHandlers) StopTask() gin.HandlerFunc {
 			return
 		}
 
-		stopTaskPayload, err := h.ticketUsecase.GetStopTaskPayload(userID, taskUUID)
+		response, err := h.ticketUsecase.StopTask(userID, taskUUID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/deletePods"
-
-		status, body, err := utils.SendRequest(url, stopTaskPayload, "POST")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(status, gin.H{"response": string(body)})
+		c.JSON(http.StatusOK, response)
 	}
 }
 

@@ -1,5 +1,7 @@
 package dtos
 
+import "github.com/google/uuid"
+
 type StopTaskTickets struct {
-	TicketIDs []string `json:"ticket_ids"`
+	TicketIDs uuid.UUIDs `json:"ticket_ids"`
 }

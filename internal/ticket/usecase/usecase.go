@@ -10,6 +10,7 @@ import (
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
+	"github.com/NamespaceManager/internal/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -87,43 +88,6 @@ func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.
 	return u.TicketRepository.CreateTask(task)
 }
 
-func (u *TicketUsecase) StopTask(taskID uuid.UUID) error {
-	// url := "http://host.docker.internal:5000/api/v1/resourceunit"
-	// fmt.Println("task id", taskID)
-	task, err := u.TicketRepository.GetTasksByID(taskID)
-	if err != nil {
-		return err
-	}
-
-	// // Try to send DELETE requests to external service, but don't fail if service is unavailable
-	// for _, ticket := range task.Tickets {
-	// 	if _, _, err := utils.SendRequest(url, ticket.ID, "DELETE"); err != nil {
-	// 		fmt.Printf("Warning: Failed to send DELETE request to external service: %v\n", err)
-	// 		// Continue execution instead of returning error
-	// 	}
-	// }
-
-	// // First, clear the TaskID from tickets to break the foreign key relationship
-	for _, ticket := range task.Tickets {
-		if err := u.TicketRepository.ClearTaskID(ticket.ID); err != nil {
-			fmt.Printf("Warning: Failed to clear task ID for ticket %s: %v\n", ticket.ID, err)
-		}
-	}
-
-	// // Update ticket statuses to inactive
-	for _, ticket := range task.Tickets {
-		if err := u.TicketRepository.UpdateTicketStatus(ticket.GliderTicket.ID, models.StatusStopped); err != nil {
-			fmt.Printf("Warning: Failed to update ticket status to stopped for ticket %s: %v\n", ticket.ID, err)
-		}
-	}
-
-	// // Finally, remove the task from database
-	if err := u.TicketRepository.UpdateTaskStatus(taskID, models.StatusStopped); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 	tasks, err := u.TicketRepository.GetTasks(ownerID)
 	if err != nil {
@@ -131,7 +95,7 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 	}
 	for _, task := range tasks {
 		if err := u.updateTaskStatus(ownerID, task.ID); err != nil {
-			return nil, fmt.Errorf("failed to update task status for task %s: %v\n", task.ID, err)
+			return nil, fmt.Errorf("failed to update task status for task %s: %v", task.ID, err)
 		}
 	}
 
@@ -469,7 +433,7 @@ func (u *TicketUsecase) CancelTicket(ticketID string) error {
 	return nil
 }
 
-func (u *TicketUsecase) GetStopTaskPayload(userID uuid.UUID, taskID uuid.UUID) (uuid.UUIDs, error) {
+func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
 	task, err := u.TicketRepository.GetTasksByID(taskID)
 	if err != nil {
 		return nil, err
@@ -478,9 +442,29 @@ func (u *TicketUsecase) GetStopTaskPayload(userID uuid.UUID, taskID uuid.UUID) (
 		return nil, fmt.Errorf("unauthorized")
 	}
 
-	var ticketIDs []uuid.UUID
+	var stopTaskPayload dtos.StopTaskTickets
 	for _, ticket := range task.Tickets {
-		ticketIDs = append(ticketIDs, ticket.GliderTicket.ID)
+		stopTaskPayload.TicketIDs = append(stopTaskPayload.TicketIDs, ticket.GliderTicket.ID)
 	}
-	return ticketIDs, nil
+
+	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/deletePods"
+
+	status, body, err := utils.SendRequest(url, stopTaskPayload, "POST")
+	if err != nil {
+		return nil, err
+	}
+
+	if status > 299 || status < 200 {
+		return body, fmt.Errorf("failed to stop task, status code: %d, response: %s", status, string(body))
+	}
+
+	for _, ticket := range task.Tickets {
+		err := u.TicketRepository.UpdateTicketStatus(ticket.GliderTicket.ID, models.StatusStopped)
+		if err != nil {
+			return body, err
+		}
+	}
+
+	err = u.TicketRepository.UpdateTaskStatus(taskID, models.StatusStopped)
+	return body, err
 }
