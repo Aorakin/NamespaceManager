@@ -344,8 +344,14 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 	var taskStatus models.StatusTicket
 	allRedeemed := true
 	anyPending := false
+	stopped := false
 
 	for _, ticket := range tickets {
+		if ticket.Status == models.StatusStopped {
+			taskStatus = models.StatusStopped
+			stopped = true
+			break
+		}
 		if ticket.Status == models.StatusPending {
 			anyPending = true
 			allRedeemed = false
@@ -360,6 +366,8 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 		taskStatus = models.StatusRedeemed
 	} else if anyPending {
 		taskStatus = models.StatusPending
+	} else if stopped {
+		taskStatus = models.StatusStopped
 	} else {
 		taskStatus = models.StatusFailed
 	}
