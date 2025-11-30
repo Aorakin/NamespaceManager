@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -413,12 +414,12 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		ticketRunning := true
 
 		for _, pod := range statusRes.PodStatus {
-			if pod.Status == "pending" {
+			if strings.ToLower(pod.Status) == "pending" {
 				ticketPending = true
 				break
 			}
 
-			if pod.Status != "running" {
+			if strings.ToLower(pod.Status) != "running" {
 				ticketRunning = false
 			}
 		}
