@@ -125,7 +125,17 @@ func (u *TicketUsecase) StopTask(taskID uuid.UUID) error {
 }
 
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
-	return u.TicketRepository.GetTasks(ownerID)
+	tasks, err := u.TicketRepository.GetTasks(ownerID)
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range tasks {
+		if err := u.updateTaskStatus(ownerID, task.ID); err != nil {
+			return nil, fmt.Errorf("failed to update task status for task %s: %v\n", task.ID, err)
+		}
+	}
+
+	return tasks, nil
 }
 
 // func (u *TicketUsecase) RollbackFailedTickets(listPayload []dtos.Payload, lastIndex int) error {
@@ -353,7 +363,7 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 // 	return status, ticket, nil
 // }
 
-func (u *TicketUsecase) UpdateTaskStatus(userID uuid.UUID, taskID uuid.UUID) error {
+func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) error {
 	task, err := u.TicketRepository.GetTasksByID(taskID)
 	if err != nil {
 		return err
