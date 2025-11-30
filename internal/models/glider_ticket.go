@@ -63,6 +63,8 @@ const (
 	StatusFailed    StatusTicket = "failed"
 )
 
+var UneditableStatus = []StatusTicket{StatusCancelled, StatusStopped, StatusExpired, StatusFailed}
+
 type ResourceUnitType string
 
 const (

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"bytes"
@@ -82,10 +83,20 @@ func (r *TicketRepository) CreateTask(task models.Task) error {
 }
 
 func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData models.StatusTicket) error {
+	var ticket models.Ticket
+	if err := r.db.First(&ticket, "glider_ticket->> 'id' = ?", ticketID).Error; err != nil {
+		return err
+	}
+
+	if slices.Contains(models.UneditableStatus, ticket.Status) {
+		return fmt.Errorf("cannot update ticket with status: %s", ticket.Status)
+	}
+
 	result := r.db.Model(&models.Ticket{}).Where("glider_ticket->> 'id' = ?", ticketID).Update("status", updatedData)
 	if result.Error != nil {
 		return result.Error
 	}
+
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("no ticket found with ID: %s", ticketID)
 	}
