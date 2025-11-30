@@ -477,13 +477,21 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 		return body, fmt.Errorf("failed to stop task, status code: %d, response: %s", status, string(body))
 	}
 
-	for _, ticket := range task.Tickets {
-		err := u.TicketRepository.UpdateTicketStatus(ticket.GliderTicket.ID, models.StatusStopped)
+	var response []dtos.StopTaskResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse stop task response: %w", err)
+	}
+
+	for _, res := range response {
+		ticketStatus := models.StatusFailed
+		if strings.ToLower(res.Status) == "deleted" {
+			ticketStatus = models.StatusStopped
+		}
+		err := u.TicketRepository.UpdateTicketStatus(res.TicketID, ticketStatus)
 		if err != nil {
-			return body, err
+			return nil, fmt.Errorf("failed to update ticket %s status: %w", res.TicketID, err)
 		}
 	}
 
-	err = u.TicketRepository.UpdateTaskStatus(taskID, models.StatusStopped)
 	return body, err
 }

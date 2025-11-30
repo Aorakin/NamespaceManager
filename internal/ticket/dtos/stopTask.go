@@ -14,3 +14,8 @@ type StopTaskRequest struct {
 type TaskID struct {
 	TaskID uuid.UUID `json:"task_id"`
 }
+
+type StopTaskResponse struct {
+	TicketID uuid.UUID `json:"ticket_id"`
+	Status   string    `json:"status"`
+}
