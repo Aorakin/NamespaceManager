@@ -121,7 +121,7 @@ func (r *TicketRepository) GetTasksByID(taskID uuid.UUID) (*models.Task, error) 
 
 func (r *TicketRepository) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 	var tasks []models.Task
-	if err := r.db.Preload("Tickets").Where("owner_id = ?", ownerID).Find(&tasks).Error; err != nil {
+	if err := r.db.Preload("Tickets").Where("owner_id = ?", ownerID).Order("created_at desc").Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	return tasks, nil
