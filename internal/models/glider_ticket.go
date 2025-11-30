@@ -60,6 +60,7 @@ const (
 	StatusCancelled StatusTicket = "cancelled"
 	StatusStopped   StatusTicket = "stopped"
 	StatusExpired   StatusTicket = "expired"
+	StatusFailed    StatusTicket = "failed"
 )
 
 type ResourceUnitType string

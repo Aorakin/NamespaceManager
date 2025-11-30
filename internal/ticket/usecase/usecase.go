@@ -350,33 +350,80 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 // 	return status, ticket, nil
 // }
 
-func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
-	updatedTaskIDs := make(map[uuid.UUID]bool)
+func (u *TicketUsecase) UpdateTaskStatus(userID uuid.UUID, taskID uuid.UUID) error {
+	task, err := u.TicketRepository.GetTasksByID(taskID)
+	if err != nil {
+		return err
+	}
+	if task.OwnerID != userID {
+		return fmt.Errorf("unauthorized")
+	}
 
+	tickets, err := u.TicketRepository.GetTicketsByTaskID(taskID)
+	if err != nil {
+		return err
+	}
+
+	var taskStatus models.StatusTicket
+	allRedeemed := true
+	anyPending := false
+
+	for _, ticket := range tickets {
+		if ticket.Status == models.StatusPending {
+			anyPending = true
+			allRedeemed = false
+			break
+		}
+		if ticket.Status != models.StatusRedeemed {
+			allRedeemed = false
+		}
+	}
+
+	if allRedeemed {
+		taskStatus = models.StatusRedeemed
+	} else if anyPending {
+		taskStatus = models.StatusPending
+	} else {
+		taskStatus = models.StatusFailed
+	}
+
+	return u.TicketRepository.UpdateTaskStatus(taskID, taskStatus)
+
+}
+
+func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
 	for _, statusRes := range req {
 		if statusRes.HasError {
-			return fmt.Errorf("received an error status for ticketId: %s", statusRes.TicketID)
+			err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
+			if err != nil {
+				fmt.Printf("failed to update ticket %s to status failed: %v", statusRes.TicketID, err)
+			}
+			continue
 		}
+
 		if len(statusRes.PodStatus) == 0 {
 			fmt.Printf("Warning: No pod status found for ticketId: %s. Skipping update.", statusRes.TicketID)
 			continue
 		}
+
 		var finalTicketStatus models.StatusTicket
-		isAnyPodPending := false
-		areAllPodsRunning := true
+		ticketPending := false
+		ticketRunning := true
 
 		for _, pod := range statusRes.PodStatus {
 			if pod.Status == "pending" {
-				isAnyPodPending = true
+				ticketPending = true
+				break
 			}
+
 			if pod.Status != "running" {
-				areAllPodsRunning = false
+				ticketRunning = false
 			}
 		}
 
-		if isAnyPodPending {
+		if ticketPending {
 			finalTicketStatus = models.StatusPending
-		} else if areAllPodsRunning {
+		} else if ticketRunning {
 			finalTicketStatus = models.StatusRedeemed
 		} else {
 			fmt.Printf("Info: TicketId %s has an indeterminate status (not all running, none pending). Skipping update.", statusRes.TicketID)
@@ -386,42 +433,8 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		fmt.Printf("Updating ticket %s to status %s", statusRes.TicketID, finalTicketStatus)
 		err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, finalTicketStatus)
 		if err != nil {
-			return fmt.Errorf("failed to update ticket %s to status %s: %w", statusRes.TicketID, finalTicketStatus, err)
+			fmt.Printf("failed to update ticket %s to status %s: %v", statusRes.TicketID, finalTicketStatus, err)
 		}
-		// Check if this ticket belongs to a task and update task status if needed
-		ticket, err := u.TicketRepository.GetTicketByGliderTicketID(statusRes.TicketID)
-		if err != nil {
-			fmt.Printf("Warning: Failed to get ticket for task status update: %v\n", err)
-			continue
-		}
-		if ticket.TaskID != nil && !updatedTaskIDs[*ticket.TaskID] {
-			updatedTaskIDs[*ticket.TaskID] = true
-
-			// Get all tickets in the task
-			task, err := u.TicketRepository.GetTasksByID(*ticket.TaskID)
-			if err != nil {
-				fmt.Printf("Warning: Failed to get task for status update: %v\n", err)
-				continue
-			}
-
-			// Check if all tickets in the task are redeemed
-			allTicketsRedeemed := true
-			for _, taskTicket := range task.Tickets {
-				if taskTicket.Status != models.StatusRedeemed {
-					allTicketsRedeemed = false
-					break
-				}
-			}
-			// Update task status if all tickets are redeemed
-			if allTicketsRedeemed && task.Status != models.StatusRedeemed {
-				fmt.Printf("Updating task %s to status redeemed", *ticket.TaskID)
-				err := u.TicketRepository.UpdateTaskStatus(*ticket.TaskID, models.StatusRedeemed)
-				if err != nil {
-					fmt.Printf("Warning: Failed to update task status: %v\n", err)
-				}
-			}
-		}
-
 	}
 
 	return nil

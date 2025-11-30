@@ -68,7 +68,6 @@ func (r *TicketRepository) Update(ticket models.Ticket) error {
 	return nil
 }
 
-
 func (r *TicketRepository) CreateTask(task models.Task) error {
 	if err := r.db.Create(&task).Error; err != nil {
 		return err
@@ -81,6 +80,7 @@ func (r *TicketRepository) CreateTask(task models.Task) error {
 	}
 	return nil
 }
+
 func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData models.StatusTicket) error {
 	result := r.db.Model(&models.Ticket{}).Where("glider_ticket->> 'id' = ?", ticketID).Update("status", updatedData)
 	if result.Error != nil {
@@ -158,4 +158,12 @@ func (r *TicketRepository) SendRequest(url string, payload interface{}, method s
 	}
 
 	return resp.StatusCode, body, nil
+}
+
+func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID) ([]models.Ticket, error) {
+	var tickets []models.Ticket
+	if err := r.db.Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+		return nil, err
+	}
+	return tickets, nil
 }

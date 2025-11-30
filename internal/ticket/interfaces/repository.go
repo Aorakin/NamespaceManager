@@ -8,6 +8,7 @@ import (
 type TicketRepository interface {
 	// ticket
 	Create(*models.Ticket) error
+	GetTicketsByTaskID(uuid.UUID) ([]models.Ticket, error)
 	GetTicketByNamespaceID(string) ([]models.Ticket, error)
 	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
 	UpdateTicketStatus(uuid.UUID, models.StatusTicket) error
