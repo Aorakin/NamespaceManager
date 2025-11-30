@@ -324,9 +324,8 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 // 		return 0, dtos.GliderTicketResponse{}, fmt.Errorf("error : Failed to parse response: %w", err)
 // 	}
 
-// 	return status, ticket, nil
-// }
-
+//		return status, ticket, nil
+//	}
 func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) error {
 	task, err := u.TicketRepository.GetTasksByID(taskID)
 	if err != nil {
@@ -341,39 +340,51 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 		return err
 	}
 
-	var taskStatus models.StatusTicket
-	allRedeemed := true
-	anyPending := false
-	stopped := false
+	var (
+		anyFailed   bool
+		anyStopped  bool
+		anyPending  bool
+		allRedeemed = true
+	)
 
-	for _, ticket := range tickets {
-		if ticket.Status == models.StatusStopped {
-			taskStatus = models.StatusStopped
-			stopped = true
-			break
-		}
-		if ticket.Status == models.StatusPending {
+	for _, t := range tickets {
+		switch t.Status {
+		case models.StatusFailed:
+			anyFailed = true
+			allRedeemed = false
+
+		case models.StatusStopped:
+			anyStopped = true
+			allRedeemed = false
+
+		case models.StatusPending:
 			anyPending = true
 			allRedeemed = false
-			break
-		}
-		if ticket.Status != models.StatusRedeemed {
+
+		case models.StatusRedeemed:
+			// still possibly all redeemed
+		default:
 			allRedeemed = false
 		}
 	}
 
-	if allRedeemed {
-		taskStatus = models.StatusRedeemed
-	} else if anyPending {
-		taskStatus = models.StatusPending
-	} else if stopped {
+	var taskStatus models.StatusTicket
+
+	// Apply your priority:
+	switch {
+	case anyFailed:
+		taskStatus = models.StatusFailed
+	case anyStopped:
 		taskStatus = models.StatusStopped
-	} else {
+	case anyPending:
+		taskStatus = models.StatusPending
+	case allRedeemed:
+		taskStatus = models.StatusRedeemed
+	default:
 		taskStatus = models.StatusFailed
 	}
 
 	return u.TicketRepository.UpdateTaskStatus(taskID, taskStatus)
-
 }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
