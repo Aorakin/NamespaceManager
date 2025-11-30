@@ -394,7 +394,6 @@ func (u *TicketUsecase) UpdateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
-	log.Printf("%#v", req)
 	for _, statusRes := range req {
 		if statusRes.HasError {
 			err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)

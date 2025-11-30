@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type StatusRes struct {
 	TicketID  uuid.UUID   `json:"ticketId"`
-	PodStatus []PodStatus `json:"podStatus"`
+	PodStatus []PodStatus `json:"status"`
 	HasError  bool        `json:"hasError"`
 }
 
