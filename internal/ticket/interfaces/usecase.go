@@ -23,4 +23,6 @@ type TicketUsecase interface {
 	UpdateTicketStatusFromGlidelet([]dtos.StatusRes) error
 	CancelTicket(string) error
 	ConvertTicketToTicketRequest(models.Ticket) (dtos.TicketReq, error)
+
+	GetStopTaskPayload(userID uuid.UUID, taskID uuid.UUID) (uuid.UUIDs, error)
 }

@@ -468,3 +468,19 @@ func (u *TicketUsecase) CancelTicket(ticketID string) error {
 	}
 	return nil
 }
+
+func (u *TicketUsecase) GetStopTaskPayload(userID uuid.UUID, taskID uuid.UUID) (uuid.UUIDs, error) {
+	task, err := u.TicketRepository.GetTasksByID(taskID)
+	if err != nil {
+		return nil, err
+	}
+	if task.OwnerID != userID {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	var ticketIDs []uuid.UUID
+	for _, ticket := range task.Tickets {
+		ticketIDs = append(ticketIDs, ticket.GliderTicket.ID)
+	}
+	return ticketIDs, nil
+}

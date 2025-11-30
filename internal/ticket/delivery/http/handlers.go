@@ -54,17 +54,33 @@ func (h *TicketHandlers) GetTasks() gin.HandlerFunc {
 
 func (h *TicketHandlers) StopTask() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req dtos.RequestTaskID
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		userID := c.MustGet("userID").(uuid.UUID)
+		if userID == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
-		if err := h.ticketUsecase.StopTask(req.TaskID); err != nil {
+		taskIDParam := c.Param("task_id")
+		taskUUID, err := uuid.Parse(taskIDParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task_id"})
+			return
+		}
+
+		stopTaskPayload, err := h.ticketUsecase.GetStopTaskPayload(userID, taskUUID)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Task stopped successfully"})
+
+		url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/deletePods"
+
+		status, body, err := utils.SendRequest(url, stopTaskPayload, "POST")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(status, gin.H{"response": string(body)})
 	}
 }
 
