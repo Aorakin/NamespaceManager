@@ -98,7 +98,10 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 			return nil, fmt.Errorf("failed to update task status for task %s: %v", task.ID, err)
 		}
 	}
-
+	tasks, err = u.TicketRepository.GetTasks(ownerID)
+	if err != nil {
+		return nil, err
+	}
 	return tasks, nil
 }
 
