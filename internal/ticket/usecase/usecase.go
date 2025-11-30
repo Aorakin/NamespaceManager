@@ -290,6 +290,7 @@ func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]dtos.UserT
 	ticketResponses := u.TicketModeltoDTO(tickets)
 	return ticketResponses, nil
 }
+
 func (u *TicketUsecase) GetUserTickets(ownerID uuid.UUID) ([]dtos.UserTicketResponse, error) {
 	tickets, err := u.TicketRepository.GetUserTickets(ownerID)
 	if err != nil {
@@ -317,6 +318,7 @@ func (u *TicketUsecase) GetUserTickets(ownerID uuid.UUID) ([]dtos.UserTicketResp
 //		}
 //		return status, resTicket, nil
 //	}
+
 func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name string, ownerID uuid.UUID) error {
 	ticket := models.Ticket{
 		Name:         name,
@@ -392,6 +394,7 @@ func (u *TicketUsecase) UpdateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
+	log.Printf("%#v", req)
 	for _, statusRes := range req {
 		if statusRes.HasError {
 			err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
