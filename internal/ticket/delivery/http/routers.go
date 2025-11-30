@@ -7,6 +7,9 @@ import (
 )
 
 func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.TicketHandler) {
+	// glidelet
+	ticketGroup.POST("/updateTicketStatusFromGlidelet", ticketHandler.UpdateTicketStatusFromGlidelet())
+
 	ticketGroup.Use(middleware.AuthMiddleware())
 	ticketGroup.POST("/handleticket", ticketHandler.HandleTicketCallback())
 
@@ -16,12 +19,10 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.GET("/getUserTickets", ticketHandler.GetUserTickets())
 	ticketGroup.GET("/getTickets/:namespace_id", ticketHandler.GetTicketByNamespaceID())
 	// ticketGroup.GET("/getTicketFromCH/:namespace_id", ticketHandler.GetTicketFromCH())
-	
-	// task
-	ticketGroup.POST("/useTickets", ticketHandler.UseTickets())// create task
-	ticketGroup.GET("/tasks", ticketHandler.GetTasks())//get tasks
-	ticketGroup.DELETE("/stopTask", ticketHandler.StopTask())// stop task
 
-	// glidelet
-	ticketGroup.POST("/updateTicketStatusFromGlidelet", ticketHandler.UpdateTicketStatusFromGlidelet())
+	// task
+	ticketGroup.POST("/useTickets", ticketHandler.UseTickets()) // create task
+	ticketGroup.GET("/tasks", ticketHandler.GetTasks())         //get tasks
+	ticketGroup.DELETE("/stopTask", ticketHandler.StopTask())   // stop task
+
 }
