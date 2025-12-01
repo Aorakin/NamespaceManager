@@ -391,6 +391,12 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
+	b, err := json.MarshalIndent(req, "", "  ")
+	if err != nil {
+		log.Println("json marshal error:", err)
+		return err
+	}
+	log.Println(string(b))
 	for _, statusRes := range req {
 		if statusRes.HasError {
 			err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
