@@ -424,11 +424,13 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		for _, pod := range statusRes.PodStatus {
 			if strings.ToLower(pod.Status) == "inactive" {
 				finalTicketStatus = models.StatusExpired
+				ticketRunning = false
 				break
 			}
 
 			if strings.ToLower(pod.Status) == "pending" {
 				finalTicketStatus = models.StatusPending
+				ticketRunning = false
 				break
 			}
 
