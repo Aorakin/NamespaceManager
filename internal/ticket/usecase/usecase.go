@@ -347,6 +347,7 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 		anyFailed   bool
 		anyStopped  bool
 		anyPending  bool
+		anyExpired  bool
 		allRedeemed = true
 	)
 
@@ -364,6 +365,10 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 			anyPending = true
 			allRedeemed = false
 
+		case models.StatusExpired:
+			anyExpired = true
+			allRedeemed = false
+
 		case models.StatusRedeemed:
 			// still possibly all redeemed
 		default:
@@ -375,6 +380,8 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 
 	// Apply your priority:
 	switch {
+	case anyExpired:
+		taskStatus = models.StatusExpired
 	case anyFailed:
 		taskStatus = models.StatusFailed
 	case anyStopped:
@@ -412,12 +419,16 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		}
 
 		var finalTicketStatus models.StatusTicket
-		ticketPending := false
 		ticketRunning := true
 
 		for _, pod := range statusRes.PodStatus {
+			if strings.ToLower(pod.Status) == "inactive" {
+				finalTicketStatus = models.StatusExpired
+				break
+			}
+
 			if strings.ToLower(pod.Status) == "pending" {
-				ticketPending = true
+				finalTicketStatus = models.StatusPending
 				break
 			}
 
@@ -426,13 +437,8 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 			}
 		}
 
-		if ticketPending {
-			finalTicketStatus = models.StatusPending
-		} else if ticketRunning {
+		if ticketRunning {
 			finalTicketStatus = models.StatusRedeemed
-		} else {
-			fmt.Printf("Info: TicketId %s has an indeterminate status (not all running, none pending). Skipping update.", statusRes.TicketID)
-			continue
 		}
 
 		fmt.Printf("Updating ticket %s to status %s", statusRes.TicketID, finalTicketStatus)
