@@ -9,6 +9,9 @@ import (
 	"github.com/NamespaceManager/internal/namespace/dtos"
 	"github.com/NamespaceManager/internal/namespace/interfaces"
 	"github.com/NamespaceManager/internal/utils"
+	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/httpclient"
+	"github.com/NamespaceManager/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -116,22 +119,20 @@ func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
 		accessToken := c.MustGet("accessToken").(string)
+
+		if namespaceID == "" {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("namespace_id is required"))))
+			return
+		}
+
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/quota/namespace/" + namespaceID
-		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
+		quotaData, err := httpclient.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
 			return
 		}
-		if status != http.StatusOK {
-			c.JSON(status, gin.H{"error": string(body)})
-			return
-		}
-		var quotas []dtos.QuotaDTO
-		if err := json.Unmarshal(body, &quotas); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse quotas"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"quotas": quotas})
+
+		c.Data(http.StatusOK, "application/json", quotaData)
 	}
 
 }
