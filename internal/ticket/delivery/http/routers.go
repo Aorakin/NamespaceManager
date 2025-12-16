@@ -27,5 +27,8 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.DELETE("/stopTask/:task_id", ticketHandler.StopTask()) // stop task
 
 	// new
-	ticketGroup.POST("/request-ticket", ticketHandler.RequestTicket())
+	ticketGroup.POST("/", ticketHandler.RequestTicket())
+	ticketGroup.GET("/", ticketHandler.GetUserTickets())
+	ticketGroup.PATCH("/:ticket_id/cancel", ticketHandler.CancelTicket())
+	ticketGroup.GET("/namespace/:namespace_id", ticketHandler.GetTicketByNamespaceID())
 }

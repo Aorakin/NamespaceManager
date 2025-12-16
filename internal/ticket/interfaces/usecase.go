@@ -14,10 +14,8 @@ type TicketUsecase interface {
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
 
-	// GetTicketFromCH(string) (int, dtos.GliderTicketResponse, error)
-	// RequestTicketToCH(dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error)
-	GetTicketByNamespaceID(string) ([]dtos.UserTicketResponse, error)
-	GetUserTickets(uuid.UUID) ([]dtos.UserTicketResponse, error)
+	GetTicketByNamespaceID(string) ([]models.Ticket, error)
+	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
 	SaveTicket(dtos.GliderTicketResponse, string, uuid.UUID) error
 	UpdateTicketStatusFromGlidelet([]dtos.StatusRes) error
 	CancelTicket(string) error

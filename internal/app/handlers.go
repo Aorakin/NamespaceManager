@@ -21,9 +21,9 @@ func (a *App) MapHandlers() error {
 
 	ticketRepository := ticketRepository.NewTicketRepository(a.postgresDB)
 	usersRepository := usersRepository.NewUsersRepository(a.postgresDB)
-	nsRepository := nsRepository.NewUsersRepository(a.postgresDB)
+	nsRepository := nsRepository.NewNamespaceRepository(a.postgresDB)
 
-	ticketUsecase := ticketUsecase.NewTicketUsecase(ticketRepository)
+	ticketUsecase := ticketUsecase.NewTicketUsecase(ticketRepository, nsRepository, usersRepository)
 	usersUsecase := usersUsecase.NewUsersUsecase(usersRepository)
 	nsUsecase := nsUsecase.NewNSUsecase(nsRepository)
 

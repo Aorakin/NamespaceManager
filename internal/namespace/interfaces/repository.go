@@ -6,8 +6,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type NSRepository interface {
+type NamespaceRepository interface {
 	Create(models.Namespace, uuid.UUID) error
+	GetByID(namespaceID uuid.UUID) (*models.Namespace, error)
 	GetNsList(uuid.UUID) ([]*models.Namespace, error)
 	Update(uuid.UUID, *dtos.EditNS, []uuid.UUID) error
 	Delete(uuid.UUID) error

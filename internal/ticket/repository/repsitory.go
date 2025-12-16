@@ -55,13 +55,6 @@ func (r *TicketRepository) GetTicketByNamespaceID(namespaceID string) ([]models.
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, error) {
-	var tickets []models.Ticket
-	if err := r.db.Where("owner_id = ?", userID).Find(&tickets).Error; err != nil {
-		return nil, err
-	}
-	return tickets, nil
-}
 func (r *TicketRepository) Update(ticket models.Ticket) error {
 	if err := r.db.Save(&ticket).Error; err != nil {
 		return err

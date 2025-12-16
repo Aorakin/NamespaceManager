@@ -8,19 +8,23 @@ import (
 	"strings"
 
 	"github.com/NamespaceManager/internal/models"
+	namespaceInterfaces "github.com/NamespaceManager/internal/namespace/interfaces"
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
+	userInterfaces "github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/NamespaceManager/internal/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
 type TicketUsecase struct {
-	TicketRepository interfaces.TicketRepository
+	ticketRepository interfaces.TicketRepository
+	namespaceRepo    namespaceInterfaces.NamespaceRepository
+	userRepo         userInterfaces.UsersRepository
 }
 
-func NewTicketUsecase(ticketRepository interfaces.TicketRepository) interfaces.TicketUsecase {
-	return &TicketUsecase{TicketRepository: ticketRepository}
+func NewTicketUsecase(ticketRepository interfaces.TicketRepository, namespaceRepo namespaceInterfaces.NamespaceRepository, userRepo userInterfaces.UsersRepository) interfaces.TicketUsecase {
+	return &TicketUsecase{ticketRepository: ticketRepository, namespaceRepo: namespaceRepo, userRepo: userRepo}
 }
 
 func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid uuid.UUID) error { //use for test (ใช้จริงคือสร้างจากที่รับมาจาก CH)
@@ -29,7 +33,7 @@ func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid
 		return err
 	}
 	// ticket := CreateTicketToGliderTicket(ticketreq, userid)
-	// if err := u.TicketRepository.Create(ticket); err != nil {
+	// if err := u.ticketRepository.Create(ticket); err != nil {
 	// 	return err
 	// }
 	return nil
@@ -38,7 +42,7 @@ func (u *TicketUsecase) HandleTicketCallback(ticketreq dtos.CreateTicket, userid
 func (u *TicketUsecase) UseTicket(ticketIDs []uuid.UUID) ([]models.GliderTicket, error) {
 	tickets := make([]models.GliderTicket, len(ticketIDs))
 	// for i, ticketID := range ticketIDs {
-	// 	ticket, err := u.TicketRepository.GetTicketByID(ticketID)
+	// 	ticket, err := u.ticketRepository.GetTicketByID(ticketID)
 	// 	if err != nil {
 	// 		return nil, err
 	// 	}
@@ -59,7 +63,7 @@ func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.
 	var ticketIDs []uuid.UUID
 
 	for _, ticketID := range taskReq.Tickets {
-		ticket, err := u.TicketRepository.GetTicketByGliderTicketID(ticketID)
+		ticket, err := u.ticketRepository.GetTicketByGliderTicketID(ticketID)
 		if err != nil {
 			return err
 		}
@@ -85,11 +89,11 @@ func (u *TicketUsecase) CreateTask(taskReq dtos.CreateTaskRequest, ownerID uuid.
 		Status:  models.StatusPending,
 	}
 
-	return u.TicketRepository.CreateTask(task)
+	return u.ticketRepository.CreateTask(task)
 }
 
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
-	tasks, err := u.TicketRepository.GetTasks(ownerID)
+	tasks, err := u.ticketRepository.GetTasks(ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +102,7 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 			return nil, fmt.Errorf("failed to update task status for task %s: %v", task.ID, err)
 		}
 	}
-	tasks, err = u.TicketRepository.GetTasks(ownerID)
+	tasks, err = u.ticketRepository.GetTasks(ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +115,7 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 // 		if lastIndex <= i {
 // 			break
 // 		}
-// 		_, _, err := u.TicketRepository.SendRequest(url, payload, "DELETE")
+// 		_, _, err := u.ticketRepository.SendRequest(url, payload, "DELETE")
 // 		if err != nil {
 // 			return err
 // 		}
@@ -155,7 +159,7 @@ func (u *TicketUsecase) ConvertTicketToTicketRequest(t models.Ticket) (dtos.Tick
 }
 
 func (u *TicketUsecase) ApproveTicket(ticketID uuid.UUID) (dtos.TicketReq, error) {
-	ticket, err := u.TicketRepository.GetTicketByGliderTicketID(ticketID)
+	ticket, err := u.ticketRepository.GetTicketByGliderTicketID(ticketID)
 	if err != nil {
 		return dtos.TicketReq{}, err
 	}
@@ -178,7 +182,7 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerRe
 	}
 	fmt.Println(tickets)
 	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/createList"
-	status, body, err := u.TicketRepository.SendRequest(url, tickets, "POST")
+	status, body, err := u.ticketRepository.SendRequest(url, tickets, "POST")
 	log.Printf("status: %d, body: %s", status, string(body))
 
 	if err != nil {
@@ -192,13 +196,13 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerRe
 	log.Printf("response: %v", jsonResponse)
 
 	for _, res := range jsonResponse.TicketResponse {
-		ticket, err := u.TicketRepository.GetTicketByGliderTicketID(res.TicketID)
+		ticket, err := u.ticketRepository.GetTicketByGliderTicketID(res.TicketID)
 		if err != nil {
 			return 0, nil, err
 		}
 		ticket.GlideletURN = res.URL
 		ticket.Password = res.Password
-		err = u.TicketRepository.Update(ticket)
+		err = u.ticketRepository.Update(ticket)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -206,96 +210,6 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerRe
 
 	return status, &jsonResponse, nil
 }
-
-// func (u *TicketUsecase) SetPayload(ticket models.GliderTicket) (*dtos.Payload, error) {
-// 	payload := dtos.Payload{
-// 		GlideletURN:       ticket.GlideletURN,
-// 		ID:                ticket.ID.String(),
-// 		Lease:             ticket.Lease,
-// 		NamespaceURN:      ticket.NamespaceURN,
-// 		RedeemTimeout:     ticket.RedeemTimeout,
-// 		ReferenceTicketID: ticket.ReferenceTicketID,
-// 		Signature:         ticket.ReferenceTicketID,
-// 		Spec:              ticket.Spec,
-// 	}
-// 	return &payload, nil
-// }
-
-// func (u *TicketUsecase) FormatTicketRes(tickets []models.GliderTicket) []dtos.TicketResponse {
-// 	ticketResponses := make([]dtos.TicketResponse, len(tickets))
-// 	// for i, ticket := range tickets {
-// 	// 	ticketResponses[i] = dtos.TicketResponse{
-// 	// 		ID:                ticket.ID,
-// 	// 		OwnerID:           ticket.OwnerID,
-// 	// 		Spec:              ticket.Spec,
-// 	// 		ReferenceTicketID: ticket.ReferenceTicketID,
-// 	// 		RedeemTimeout:     ticket.RedeemTimeout,
-// 	// 		Lease:             ticket.Lease,
-// 	// 		Signature:         ticket.Signature,
-// 	// 		Status:            string(ticket.Status),
-// 	// 		CreatedAt:         ticket.CreatedAt,
-// 	// 		UpdatedAt:         ticket.UpdatedAt,
-// 	// 	}
-// 	// }
-// 	return ticketResponses
-// }
-
-func (u *TicketUsecase) TicketModeltoDTO(tickets []models.Ticket) []dtos.UserTicketResponse {
-	var dtosList []dtos.UserTicketResponse
-
-	for _, t := range tickets {
-		dto := dtos.UserTicketResponse{
-			ID:           t.ID.String(),
-			Name:         t.Name,
-			GliderTicket: models.GliderTicket(t.GliderTicket),
-			Signature:    t.Signature,
-			Status:       string(t.Status),
-		}
-		dtosList = append(dtosList, dto)
-	}
-
-	return dtosList
-}
-
-func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]dtos.UserTicketResponse, error) {
-	tickets, err := u.TicketRepository.GetTicketByNamespaceID(namespaceId)
-	if err != nil {
-		return []dtos.UserTicketResponse{}, err
-	}
-	if len(tickets) == 0 {
-		return []dtos.UserTicketResponse{}, nil
-	}
-	ticketResponses := u.TicketModeltoDTO(tickets)
-	return ticketResponses, nil
-}
-
-func (u *TicketUsecase) GetUserTickets(ownerID uuid.UUID) ([]dtos.UserTicketResponse, error) {
-	tickets, err := u.TicketRepository.GetUserTickets(ownerID)
-	if err != nil {
-		return []dtos.UserTicketResponse{}, err
-	}
-	if len(tickets) == 0 {
-		return []dtos.UserTicketResponse{}, nil
-	}
-	ticketResponses := u.TicketModeltoDTO(tickets)
-	return ticketResponses, nil
-}
-
-//	func (u *TicketUsecase) RequestTicketToCH(ticketReq dtos.RequestTicketDTO) (int, dtos.GliderTicketResponse, error) {
-//		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
-//		status, res, err := utils.SendRequest(url, ticketReq, "POST")
-//		fmt.Println("error", err)
-//		fmt.Println("status", status)
-//		fmt.Println("res", string(res))
-//		if err != nil {
-//			return 0, dtos.GliderTicketResponse{}, err
-//		}
-//		var resTicket dtos.GliderTicketResponse
-//		if err := json.Unmarshal(res, &resTicket); err != nil {
-//			return 0, dtos.GliderTicketResponse{}, err
-//		}
-//		return status, resTicket, nil
-//	}
 
 func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name string, ownerID uuid.UUID) error {
 	ticket := models.Ticket{
@@ -307,7 +221,7 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 		TaskID:       nil,
 	}
 
-	if err := u.TicketRepository.Create(&ticket); err != nil {
+	if err := u.ticketRepository.Create(&ticket); err != nil {
 		return err
 	}
 
@@ -330,7 +244,7 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 //		return status, ticket, nil
 //	}
 func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) error {
-	task, err := u.TicketRepository.GetTasksByID(taskID)
+	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
 		return err
 	}
@@ -338,7 +252,7 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 		return fmt.Errorf("unauthorized")
 	}
 
-	tickets, err := u.TicketRepository.GetTicketsByTaskID(taskID)
+	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID)
 	if err != nil {
 		return err
 	}
@@ -394,7 +308,7 @@ func (u *TicketUsecase) updateTaskStatus(userID uuid.UUID, taskID uuid.UUID) err
 		taskStatus = models.StatusFailed
 	}
 
-	return u.TicketRepository.UpdateTaskStatus(taskID, taskStatus)
+	return u.ticketRepository.UpdateTaskStatus(taskID, taskStatus)
 }
 
 func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
@@ -406,7 +320,7 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 	log.Println(string(b))
 	for _, statusRes := range req {
 		if statusRes.HasError {
-			err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
+			err := u.ticketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
 			if err != nil {
 				fmt.Printf("failed to update ticket %s to status failed: %v", statusRes.TicketID, err)
 			}
@@ -444,7 +358,7 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		}
 
 		fmt.Printf("Updating ticket %s to status %s", statusRes.TicketID, finalTicketStatus)
-		err := u.TicketRepository.UpdateTicketStatus(statusRes.TicketID, finalTicketStatus)
+		err := u.ticketRepository.UpdateTicketStatus(statusRes.TicketID, finalTicketStatus)
 		if err != nil {
 			fmt.Printf("failed to update ticket %s to status %s: %v", statusRes.TicketID, finalTicketStatus, err)
 		}
@@ -462,7 +376,7 @@ func (u *TicketUsecase) CancelTicket(ticketID string) error {
 	// if status != 200 {
 	// 	return fmt.Errorf("failed to cancel ticket in Clearinghouse, status code: %d", status)
 	// }
-	err := u.TicketRepository.CancelTicket(ticketID)
+	err := u.ticketRepository.CancelTicket(ticketID)
 	if err != nil {
 		return err
 	}
@@ -470,7 +384,7 @@ func (u *TicketUsecase) CancelTicket(ticketID string) error {
 }
 
 func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
-	task, err := u.TicketRepository.GetTasksByID(taskID)
+	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -504,7 +418,7 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 		if strings.ToLower(res.Status) == "deleted" {
 			ticketStatus = models.StatusStopped
 		}
-		err := u.TicketRepository.UpdateTicketStatus(res.TicketID, ticketStatus)
+		err := u.ticketRepository.UpdateTicketStatus(res.TicketID, ticketStatus)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update ticket %s status: %w", res.TicketID, err)
 		}

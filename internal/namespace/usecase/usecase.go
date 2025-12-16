@@ -10,12 +10,12 @@ import (
 )
 
 type NSUsecase struct {
-	NsRepository interfaces.NSRepository
+	namespaceRepository interfaces.NamespaceRepository
 }
 
-func NewNSUsecase(nsRepository interfaces.NSRepository) interfaces.NSUsecase {
+func NewNSUsecase(nsRepository interfaces.NamespaceRepository) interfaces.NSUsecase {
 	return &NSUsecase{
-		NsRepository: nsRepository,
+		namespaceRepository: nsRepository,
 	}
 }
 
@@ -28,12 +28,12 @@ func (u *NSUsecase) HandleCreate(request dtos.RequestNS, userID uuid.UUID) error
 		ResourceUnitURNs: request.ResourceUnitURNs,
 	}
 
-	return u.NsRepository.Create(*namespace, userID)
+	return u.namespaceRepository.Create(*namespace, userID)
 }
 
 func (u *NSUsecase) GetNSList(userID uuid.UUID) ([]dtos.NSresponse, error) {
 	var resp []dtos.NSresponse
-	NSlist, err := u.NsRepository.GetNsList(userID)
+	NSlist, err := u.namespaceRepository.GetNsList(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +62,18 @@ func (u *NSUsecase) Update(editNS dtos.ReqForEdit) error {
 		Quota:    editNS.Quota,
 	}
 
-	return u.NsRepository.Update(editNS.ID, namespace, editNS.UserIDs)
+	return u.namespaceRepository.Update(editNS.ID, namespace, editNS.UserIDs)
 }
 
 func (u *NSUsecase) Delete(namespaceID uuid.UUID) error {
-	return u.NsRepository.Delete(namespaceID)
+	return u.namespaceRepository.Delete(namespaceID)
 }
 
 func (s *NSUsecase) AddUsersToNamespace(req dtos.UpdateNamespaceUsersReq) error {
 	if len(req.UserIDs) == 0 {
 		return fmt.Errorf("at least one user ID must be provided")
 	}
-	return s.NsRepository.AddUsersToNamespace(req.NamespaceID, req.UserIDs)
+	return s.namespaceRepository.AddUsersToNamespace(req.NamespaceID, req.UserIDs)
 }
 
 func (s *NSUsecase) RemoveUsersFromNamespace(req dtos.UpdateNamespaceUsersReq) error {
@@ -81,5 +81,5 @@ func (s *NSUsecase) RemoveUsersFromNamespace(req dtos.UpdateNamespaceUsersReq) e
 	if len(req.UserIDs) == 0 {
 		return fmt.Errorf("at least one user ID must be provided")
 	}
-	return s.NsRepository.RemoveUsersFromNamespace(req.NamespaceID, req.UserIDs)
+	return s.namespaceRepository.RemoveUsersFromNamespace(req.NamespaceID, req.UserIDs)
 }

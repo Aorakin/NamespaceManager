@@ -35,9 +35,17 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 		GlideletURN:  gliderTicket.Ticket.GlideletURN,
 	}
 
-	if err := u.TicketRepository.Create(&ticket); err != nil {
+	if err := u.ticketRepository.Create(&ticket); err != nil {
 		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to save ticket: %w", err))
 	}
 
 	return &gliderTicket, nil
+}
+
+func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]models.Ticket, error) {
+	return u.ticketRepository.GetTicketByNamespaceID(namespaceId)
+}
+
+func (u *TicketUsecase) GetUserTickets(userID uuid.UUID) ([]models.Ticket, error) {
+	return u.ticketRepository.GetUserTickets(userID)
 }

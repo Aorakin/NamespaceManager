@@ -10,15 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type NSRepository struct {
+type NamespaceRepository struct {
 	db *gorm.DB
 }
 
-func NewUsersRepository(db *gorm.DB) interfaces.NSRepository {
-	return &NSRepository{db: db}
+func NewNamespaceRepository(db *gorm.DB) interfaces.NamespaceRepository {
+	return &NamespaceRepository{db: db}
 }
 
-func (r *NSRepository) Create(namespace models.Namespace, userID uuid.UUID) error {
+func (r *NamespaceRepository) Create(namespace models.Namespace, userID uuid.UUID) error {
 	if err := r.db.Create(&namespace).Error; err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *NSRepository) Create(namespace models.Namespace, userID uuid.UUID) erro
 	return nil
 }
 
-func (r *NSRepository) GetNsList(userID uuid.UUID) ([]*models.Namespace, error) {
+func (r *NamespaceRepository) GetNsList(userID uuid.UUID) ([]*models.Namespace, error) {
 	var NSlist []*models.Namespace
 	err := r.db.
 		Joins("JOIN user_namespaces ON user_namespaces.namespace_id = namespaces.id").
@@ -48,7 +48,7 @@ func (r *NSRepository) GetNsList(userID uuid.UUID) ([]*models.Namespace, error) 
 	return NSlist, nil
 }
 
-func (r *NSRepository) Delete(namespaceID uuid.UUID) error {
+func (r *NamespaceRepository) Delete(namespaceID uuid.UUID) error {
 	var namespace models.Namespace
 	if err := r.db.First(&namespace, namespaceID).Error; err != nil {
 		return err
@@ -65,7 +65,7 @@ func (r *NSRepository) Delete(namespaceID uuid.UUID) error {
 	return nil
 }
 
-func (r *NSRepository) Update(namespaceID uuid.UUID, updatedData *dtos.EditNS, userIDs []uuid.UUID) error {
+func (r *NamespaceRepository) Update(namespaceID uuid.UUID, updatedData *dtos.EditNS, userIDs []uuid.UUID) error {
 	var namespace models.Namespace
 
 	if err := r.db.Model(&namespace).Updates(updatedData).Error; err != nil {
@@ -82,7 +82,7 @@ func (r *NSRepository) Update(namespaceID uuid.UUID, updatedData *dtos.EditNS, u
 	return nil
 }
 
-func (r *NSRepository) RemoveUsersFromNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) error {
+func (r *NamespaceRepository) RemoveUsersFromNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) error {
 	namespace, users, err := r.FetchNamespace(namespaceID, userIDs)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (r *NSRepository) RemoveUsersFromNamespace(namespaceID uuid.UUID, userIDs [
 	return nil
 }
 
-func (r *NSRepository) AddUsersToNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) error {
+func (r *NamespaceRepository) AddUsersToNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) error {
 	namespace, users, err := r.FetchNamespace(namespaceID, userIDs)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (r *NSRepository) AddUsersToNamespace(namespaceID uuid.UUID, userIDs []uuid
 	return nil
 }
 
-func (r *NSRepository) FetchNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) (models.Namespace, []models.User, error) {
+func (r *NamespaceRepository) FetchNamespace(namespaceID uuid.UUID, userIDs []uuid.UUID) (models.Namespace, []models.User, error) {
 	var namespace models.Namespace
 
 	if err := r.db.Preload("Users").First(&namespace, namespaceID).Error; err != nil {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
+	"github.com/NamespaceManager/internal/ticket/mapper"
 	"github.com/NamespaceManager/internal/utils"
 	apiError "github.com/NamespaceManager/pkg/api_error"
 	"github.com/NamespaceManager/pkg/httpclient"
@@ -155,19 +156,21 @@ func (h *TicketHandlers) GetTicketByNamespaceID() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, tickets)
+		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
 	}
 }
 
 func (h *TicketHandlers) GetUserTickets() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
+
 		tickets, err := h.ticketUsecase.GetUserTickets(userID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
 			return
 		}
-		c.JSON(http.StatusOK, tickets)
+
+		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
 	}
 }
 
