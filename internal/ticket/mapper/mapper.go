@@ -49,9 +49,9 @@ func ToTicketRequest(ticket models.Ticket) (*dtos.TicketReq, error) {
 		GlideletURN:       ticket.GliderTicket.GlideletURN,
 		ID:                ticket.GliderTicket.ID,
 		Lease:             fmt.Sprintf("%d", ticket.GliderTicket.Lease),
-		NamespaceURN:      ticket.GliderTicket.NamespaceURN,
+		NamespaceURN:      ticket.GliderTicket.NamespaceID.String(),
 		RedeemTimeout:     fmt.Sprintf("%d", ticket.GliderTicket.RedeemTimeout),
-		ReferenceTicketID: ticket.GliderTicket.ReferenceTicketID,
+		ReferenceTicketID: ticket.GliderTicket.ReferenceTicketID.String(),
 		Signature:         ticket.Signature,
 		Spec: dtos.GliderSpec{
 			Type:      dtos.ResourceUnitType(ticket.GliderTicket.Spec.Type),

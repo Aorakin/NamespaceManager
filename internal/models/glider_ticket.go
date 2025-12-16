@@ -10,16 +10,18 @@ import (
 )
 
 type GliderTicket struct {
-	ID                uuid.UUID  `json:"id"`
-	NamespaceURN      string     `json:"namespace_urn"` // namespace.id
+	ID                uuid.UUID  `json:"id"`           // ticket id
+	NamespaceID       uuid.UUID  `json:"namespace_id"` // namespace id
 	NamespaceName     string     `json:"namespace_name"`
-	ProjectURN        string     `json:"project_urn"` // project.URN
+	ProjectID         uuid.UUID  `json:"project_id"` // project id
 	ProjectName       string     `json:"project_name"`
-	GlideletURN       string     `json:"glidelet_urn"` // resource pool URN
+	NodeID            uuid.UUID  `json:"node_id"`
+	NodeName          string     `json:"node_name"`
+	GlideletURN       string     `json:"glidelet_urn"` // resource_pool.URN (where to send request)
 	GlideletName      string     `json:"glidelet_name"`
 	OrganizationName  string     `json:"organization_name"`
-	Spec              GliderSpec `json:"spec" gorm:"type:jsonb"`
-	ReferenceTicketID string     `json:"reference_ticket_id"`
+	Spec              GliderSpec `json:"spec"`
+	ReferenceTicketID uuid.UUID  `json:"reference_ticket_id"`
 	RedeemTimeout     uint       `json:"redeem_timeout"` // in seconds
 	Lease             uint       `json:"lease"`          // in seconds
 	CreatedAt         time.Time  `json:"created_at"`
