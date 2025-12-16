@@ -12,3 +12,27 @@ func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, er
 	}
 	return tickets, nil
 }
+
+func (r *TicketRepository) GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error) {
+	var tickets []models.Ticket
+	if err := r.db.Where("id IN ?", ticketIDs).Find(&tickets).Error; err != nil {
+		return nil, err
+	}
+	return tickets, nil
+}
+
+func (r *TicketRepository) UpdateCodeServerInfo(ticketID uuid.UUID, url string, password string) error {
+	var ticket models.Ticket
+	if err := r.db.Where("id = ?", ticketID).First(&ticket).Error; err != nil {
+		return err
+	}
+
+	ticket.URL = url
+	ticket.Password = password
+
+	if err := r.db.Save(&ticket).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

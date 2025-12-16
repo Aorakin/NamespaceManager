@@ -16,10 +16,12 @@ type TicketRepository interface {
 	GetTicketByGliderTicketID(uuid.UUID) (models.Ticket, error)
 	CancelTicket(string) error
 	// task
-	SendRequest(string, interface{}, string) (int, []byte, error)
 	CreateTask(models.Task) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
 	UpdateTaskStatus(uuid.UUID, models.StatusTicket) error
 	GetTasksByID(uuid.UUID) (*models.Task, error)
 	ClearTaskID(uuid.UUID) error
+
+	GetTicketsByIDs([]uuid.UUID) ([]models.Ticket, error)
+	UpdateCodeServerInfo(uuid.UUID, string, string) error
 }

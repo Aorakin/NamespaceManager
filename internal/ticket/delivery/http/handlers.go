@@ -83,45 +83,20 @@ func (h *TicketHandlers) StopTask() gin.HandlerFunc {
 
 func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var ticketReq dtos.CreateTaskRequest
-		if err := c.ShouldBindJSON(&ticketReq); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		}
-
 		userID := c.MustGet("userID").(uuid.UUID)
 
-		// resp := make([][]map[string]interface{}, len(ticketReq.Tickets))
-		// var successfulPayloads []models.GliderTicket
-		// // var laststatus int
-		// for i, payload := range ticketReq.Tickets {
-		// 	_, jsonResponse, err := h.ticketUsecase.SendTicket(payload)
-		// 	if err != nil {
-		// 		if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
-		// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		// 		}
-		// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// 		return
-		// 	}
-		// 	successfulPayloads = append(successfulPayloads, payload)
-		// 	resp[i] = jsonResponse
-		// 	// laststatus = status
-		// }
-		fmt.Println(ticketReq.Tickets)
-		// _, jsonResponse, err := h.ticketUsecase.SendTicket(ticketReq.Tickets)
-		// if err != nil {
-		// 	// if err := h.ticketUsecase.RollbackFailedTickets(successfulPayloads, i); err != nil {
-		// 	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		// 	// }
-		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// 	return
-		// }
-
-		if err := h.ticketUsecase.CreateTask(ticketReq, userID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		var request dtos.CreateTaskRequest
+		if err := c.ShouldBindJSON(&request); err != nil {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
 			return
 		}
-		c.JSON(http.StatusOK, "Task Created")
+
+		err := h.ticketUsecase.CreateTask(&request, userID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(err))
+			return
+		}
+		c.JSON(http.StatusOK, "task created")
 	}
 }
 
