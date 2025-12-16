@@ -230,7 +230,7 @@ func (h NSHandlers) GetResourcesPoolDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		poolID := c.Param("pool_id")
 		accessToken := c.MustGet("accessToken").(string)
-		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/pool/" + poolID
+		url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/node/" + poolID
 		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
