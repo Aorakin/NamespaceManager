@@ -13,9 +13,9 @@ func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, er
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error) {
+func (r *TicketRepository) GetTicketsByGliderTicketIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Where("id IN ?", ticketIDs).Find(&tickets).Error; err != nil {
+	if err := r.db.Where("glider_ticket->> 'id' IN ?", ticketIDs).Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil

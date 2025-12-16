@@ -33,7 +33,7 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 }
 
 func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.UUID) error {
-	tickets, err := u.ticketRepository.GetTicketsByIDs(request.Tickets)
+	tickets, err := u.ticketRepository.GetTicketsByGliderTicketIDs(request.Tickets)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
 	}

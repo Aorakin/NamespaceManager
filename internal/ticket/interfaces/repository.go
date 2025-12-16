@@ -22,6 +22,6 @@ type TicketRepository interface {
 	GetTasksByID(uuid.UUID) (*models.Task, error)
 	ClearTaskID(uuid.UUID) error
 
-	GetTicketsByIDs([]uuid.UUID) ([]models.Ticket, error)
-	UpdateCodeServerInfo(uuid.UUID, string, string) error
+	GetTicketsByGliderTicketIDs(gliderTicketIDs []uuid.UUID) ([]models.Ticket, error)
+	UpdateCodeServerInfo(ticketID uuid.UUID, url string, password string) error
 }
