@@ -23,7 +23,7 @@ func (r *TicketRepository) GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Tick
 
 func (r *TicketRepository) UpdateCodeServerInfo(ticketID uuid.UUID, url string, password string) error {
 	var ticket models.Ticket
-	if err := r.db.Where("id = ?", ticketID).First(&ticket).Error; err != nil {
+	if err := r.db.Where("glider_ticket->> 'id' = ?", ticketID).First(&ticket).Error; err != nil {
 		return err
 	}
 
