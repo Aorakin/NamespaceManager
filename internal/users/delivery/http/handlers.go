@@ -228,7 +228,7 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		}
 
 		c.SetCookie("access_token", accessToken, 3600, "/", ".onepointfive.life", true, true)
-		c.SetCookie("refresh_token", refreshToken, 86400, "/users/auth/refresh-token", ".onepointfive.life", true, true)
+		c.SetCookie("refresh_token", refreshToken, 7*24*3600, "/users/auth/refresh-token", ".onepointfive.life", true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens set successfully"})
 	}
