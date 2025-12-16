@@ -46,7 +46,7 @@ func (r *TicketRepository) CancelTicket(ticketID string) error {
 
 func (r *TicketRepository) GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Where("glider_ticket->>'namespace_urn' = ?", namespaceID).Find(&tickets).Error; err != nil {
+	if err := r.db.Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
