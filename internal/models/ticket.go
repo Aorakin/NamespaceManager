@@ -7,16 +7,17 @@ import (
 
 type Ticket struct {
 	BaseModel
-	Name         string       `json:"name"`
-	GliderTicket GliderTicket `gorm:"type:jsonb" json:"ticket"`
-	Signature    string       `json:"signature"`
-	Status       StatusTicket `json:"status"`
-	TaskID       *uuid.UUID   `gorm:"type:uuid" json:"task_id"`
-	OwnerID      uuid.UUID    `gorm:"type:uuid" json:"owner_id"`
-	NamespaceID  uuid.UUID    `gorm:"type:uuid" json:"namespace_id"`
-	GlideletURN  string       `json:"glidelet_urn"`
-	URL          string       `json:"url"`
-	Password     string       `json:"password"`
+	Name           string       `json:"name"`
+	GliderTicket   GliderTicket `gorm:"type:jsonb" json:"ticket"`
+	Signature      string       `json:"signature"`
+	Status         StatusTicket `json:"status"`
+	TaskID         *uuid.UUID   `gorm:"type:uuid" json:"task_id"`
+	OwnerID        uuid.UUID    `gorm:"type:uuid" json:"owner_id"`
+	NamespaceID    uuid.UUID    `gorm:"type:uuid" json:"namespace_id"`
+	GlideletURN    string       `json:"glidelet_urn"`
+	ResourcePoolID uuid.UUID    `gorm:"type:uuid" json:"resource_pool_id"`
+	URL            string       `json:"url"`
+	Password       string       `json:"password"`
 }
 
 func (t *Ticket) BeforeCreate(tx *gorm.DB) (err error) {
