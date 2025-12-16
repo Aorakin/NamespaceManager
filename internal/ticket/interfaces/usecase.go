@@ -24,4 +24,7 @@ type TicketUsecase interface {
 	ConvertTicketToTicketRequest(models.Ticket) (dtos.TicketReq, error)
 
 	StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error)
+
+	// new
+	RequestTicket(dtos.RequestTicketDTO, string, uuid.UUID) (*dtos.GliderTicketResponse, error)
 }

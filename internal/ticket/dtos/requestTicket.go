@@ -1,13 +1,16 @@
 package dtos
 
+import "github.com/google/uuid"
+
 type ResourceDTO struct {
-	ID       string `json:"resource_id"`
-	Quantity int    `json:"quantity"`
+	Quantity   uint      `json:"quantity" binding:"required,gte=0"`
+	ResourceID uuid.UUID `json:"resource_id" binding:"required,uuid"`
 }
+
 type RequestTicketDTO struct {
 	Name        string        `json:"name" binding:"required"`
-	NamespaceID string        `json:"namespace_id" binding:"required"`
-	QuotaID     string        `json:"quota_id" binding:"required"`
+	NamespaceID uuid.UUID     `json:"namespace_id" binding:"required,uuid"`
+	QuotaID     uuid.UUID     `json:"quota_id" binding:"required,uuid"`
 	Resources   []ResourceDTO `json:"resources" binding:"required"`
-	Duration    int           `json:"duration" binding:"required"`
+	Duration    uint          `json:"duration" binding:"required,gte=1"` // in seconds
 }

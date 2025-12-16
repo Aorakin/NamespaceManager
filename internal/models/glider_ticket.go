@@ -15,7 +15,7 @@ type GliderTicket struct {
 	NamespaceName     string     `json:"namespace_name"`
 	ProjectURN        string     `json:"project_urn"` // project.URN
 	ProjectName       string     `json:"project_name"`
-	GlideletURN       string     `json:"glidelet_urn"` // resource_pool.URN
+	GlideletURN       string     `json:"glidelet_urn"` // resource pool URN
 	GlideletName      string     `json:"glidelet_name"`
 	OrganizationName  string     `json:"organization_name"`
 	Spec              GliderSpec `json:"spec" gorm:"type:jsonb"`

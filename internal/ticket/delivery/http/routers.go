@@ -14,7 +14,8 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.POST("/handleticket", ticketHandler.HandleTicketCallback())
 
 	// ticket
-	ticketGroup.POST("/requestTicketToCH", ticketHandler.RequestTicketToCH())
+
+	ticketGroup.POST("/requestTicketToCH", ticketHandler.RequestTicket())
 	ticketGroup.GET("/cancelTicket/:ticket_id", ticketHandler.CancelTicket())
 	ticketGroup.GET("/getUserTickets", ticketHandler.GetUserTickets())
 	ticketGroup.GET("/getTickets/:namespace_id", ticketHandler.GetTicketByNamespaceID())
@@ -24,4 +25,7 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.POST("/useTickets", ticketHandler.UseTickets())        // create task
 	ticketGroup.GET("/tasks", ticketHandler.GetTasks())                //get tasks
 	ticketGroup.DELETE("/stopTask/:task_id", ticketHandler.StopTask()) // stop task
+
+	// new
+	ticketGroup.POST("/request-ticket", ticketHandler.RequestTicket())
 }

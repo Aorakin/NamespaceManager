@@ -4,7 +4,6 @@ import "github.com/gin-gonic/gin"
 
 type TicketHandler interface {
 	HandleTicketCallback() gin.HandlerFunc
-	RequestTicket() gin.HandlerFunc
 	UseTickets() gin.HandlerFunc
 	GetTasks() gin.HandlerFunc
 	StopTask() gin.HandlerFunc
@@ -14,4 +13,7 @@ type TicketHandler interface {
 	GetTicketByNamespaceID() gin.HandlerFunc
 	UpdateTicketStatusFromGlidelet() gin.HandlerFunc
 	CancelTicket() gin.HandlerFunc
+
+	// new
+	RequestTicket() gin.HandlerFunc
 }

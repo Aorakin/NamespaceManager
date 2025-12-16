@@ -11,6 +11,9 @@ import (
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
 	"github.com/NamespaceManager/internal/utils"
+	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/httpclient"
+	"github.com/NamespaceManager/pkg/response"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -121,39 +124,25 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 	}
 }
 
-func (h *TicketHandlers) RequestTicket() gin.HandlerFunc { // request ticket to CH but never test
+func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// var ticketReq dtos.RequestTicket
-		// if err := c.ShouldBindJSON(&ticketReq); err != nil {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		// 	return
-		// }
-		// if utils.CheckValidater(ticketReq) != nil {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		// 	return
-		// }
-		// // userID := utils.GetSession(c, "userID").(uuid.UUID)
+		userID := c.MustGet("userID").(uuid.UUID)
+		accessToken := c.MustGet("accessToken").(string)
 
-		// url := "http://host.docker.internal:8989" //change url
-		// status, jsonResponse, err := utils.SendRequest(url, ticketReq, "POST")
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// 	return
-		// }
+		var request dtos.RequestTicketDTO
+		if err := c.ShouldBindJSON(&request); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		}
 
-		// var tickets []models.GliderTicket
-		// if err := json.Unmarshal(jsonResponse, &tickets); err != nil {
-		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-		// 	return
-		// }
-		// // for _, ticket := range tickets {
-		// // 	if err := h.ticketUsecase.HandleTicketCallback(ticket, userID); err != nil {
-		// // 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		// // 		return
-		// // 	}
-		// // }
-		// c.JSON(status, tickets)
+		gliderTicket, err := h.ticketUsecase.RequestTicket(request, accessToken, userID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(err))
+			return
+		}
 
+		// Format and return response
+		c.JSON(http.StatusCreated, gin.H{"ticket": gliderTicket})
 	}
 }
 
@@ -187,13 +176,13 @@ func (h *TicketHandlers) GetTicketFromCH() gin.HandlerFunc {
 		ticketId := c.Param("ticket_id")
 		accessToken := c.MustGet("accessToken").(string)
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + url.PathEscape(ticketId)
-		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", accessToken)
+		body, err := httpclient.SendRequestWithAccessToken(url, nil, "GET", accessToken)
 		if err != nil {
+			if apiErr, ok := err.(apiError.ApiErr); ok {
+				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		if status != http.StatusOK {
-			c.JSON(status, gin.H{"error": string(body)})
 			return
 		}
 		var ticketResponse dtos.GliderTicketResponse
@@ -201,7 +190,7 @@ func (h *TicketHandlers) GetTicketFromCH() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
 			return
 		}
-		c.JSON(status, ticketResponse)
+		c.JSON(http.StatusOK, ticketResponse)
 	}
 }
 
@@ -216,8 +205,12 @@ func (h *TicketHandlers) RequestTicketToCH() gin.HandlerFunc {
 			return
 		}
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
-		status, res, err := utils.SendRequestWithAccessToken(url, ticketReq, "POST", accessToken)
+		res, err := httpclient.SendRequestWithAccessToken(url, ticketReq, "POST", accessToken)
 		if err != nil {
+			if apiErr, ok := err.(apiError.ApiErr); ok {
+				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -247,7 +240,7 @@ func (h *TicketHandlers) RequestTicketToCH() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(status, gin.H{"ticket": gliderTicket})
+		c.JSON(http.StatusCreated, gin.H{"ticket": gliderTicket})
 
 	}
 }
@@ -279,13 +272,13 @@ func (h *TicketHandlers) CancelTicket() gin.HandlerFunc {
 		}
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + url.PathEscape(ticketId) + "/cancel"
 		accessToken := c.MustGet("accessToken").(string)
-		status, body, err := utils.SendRequestWithAccessToken(url, nil, "PATCH", accessToken)
+		_, err := httpclient.SendRequestWithAccessToken(url, nil, "PATCH", accessToken)
 		if err != nil {
+			if apiErr, ok := err.(apiError.ApiErr); ok {
+				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		if status != http.StatusOK {
-			c.JSON(status, gin.H{"error": string(body)})
 			return
 		}
 		err = h.ticketUsecase.CancelTicket(ticketId)

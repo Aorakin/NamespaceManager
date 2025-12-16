@@ -10,13 +10,15 @@ import (
 )
 
 type Ticket struct {
-	ID           uuid.UUID        `gorm:"type:uuid;primaryKey;unique" json:"id"`
+	BaseModel
 	Name         string           `json:"name"`
 	GliderTicket GliderTicketJSON `gorm:"type:jsonb" json:"ticket"`
 	Signature    string           `json:"signature"`
 	Status       StatusTicket     `json:"status"`
 	TaskID       *uuid.UUID       `gorm:"type:uuid" json:"task_id"`
 	OwnerID      uuid.UUID        `gorm:"type:uuid" json:"owner_id"`
+	NamespaceID  uuid.UUID        `gorm:"type:uuid" json:"namespace_id"`
+	GlideletURN  string           `json:"glidelet_urn"`
 	URL          string           `json:"url"`
 	Password     string           `json:"password"`
 }

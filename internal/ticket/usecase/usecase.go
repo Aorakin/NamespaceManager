@@ -196,7 +196,7 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerRe
 		if err != nil {
 			return 0, nil, err
 		}
-		ticket.URL = res.URL
+		ticket.GlideletURN = res.URL
 		ticket.Password = res.Password
 		err = u.TicketRepository.Update(ticket)
 		if err != nil {
