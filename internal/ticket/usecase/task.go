@@ -78,8 +78,8 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 
 func (u *TicketUsecase) sendTicket(tickets []uuid.UUID) (*dtos.CodeServerResponse, error) {
 	var ticketsReq []dtos.TicketReq
-	for _, ticketID := range tickets {
-		ticket, err := u.toTicketRequest(ticketID)
+	for _, gliderTicketID := range tickets {
+		ticket, err := u.toTicketRequest(gliderTicketID)
 		if err != nil {
 			return nil, err
 		}
