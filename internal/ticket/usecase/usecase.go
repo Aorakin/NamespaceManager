@@ -214,7 +214,7 @@ func (u *TicketUsecase) SendTicket(payload []uuid.UUID) (int, *dtos.CodeServerRe
 func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name string, ownerID uuid.UUID) error {
 	ticket := models.Ticket{
 		Name:         name,
-		GliderTicket: models.GliderTicketJSON(ticketRes.Ticket),
+		GliderTicket: ticketRes.Ticket,
 		Signature:    ticketRes.Signature,
 		Status:       models.StatusReady,
 		OwnerID:      ownerID,
@@ -364,22 +364,6 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		}
 	}
 
-	return nil
-}
-
-func (u *TicketUsecase) CancelTicket(ticketID string) error {
-	// url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + ticketID + "/cancel"
-	// status, _, err := utils.SendRequest(url, nil, "PATCH")
-	// if err != nil {
-	// 	return err
-	// }
-	// if status != 200 {
-	// 	return fmt.Errorf("failed to cancel ticket in Clearinghouse, status code: %d", status)
-	// }
-	err := u.ticketRepository.CancelTicket(ticketID)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

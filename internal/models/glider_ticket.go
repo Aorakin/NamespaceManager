@@ -25,6 +25,20 @@ type GliderTicket struct {
 	CreatedAt         time.Time  `json:"created_at"`
 }
 
+// Value implements driver.Valuer for JSONB serialization
+func (g GliderTicket) Value() (driver.Value, error) {
+	return json.Marshal(g)
+}
+
+// Scan implements sql.Scanner for JSONB deserialization
+func (g *GliderTicket) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to unmarshal JSONB value: %v", value)
+	}
+	return json.Unmarshal(bytes, g)
+}
+
 type GliderSpec struct {
 	Type      ResourceUnitType `json:"type"`
 	PoolID    string           `json:"pool_id"`

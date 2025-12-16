@@ -1,26 +1,22 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"fmt"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Ticket struct {
 	BaseModel
-	Name         string           `json:"name"`
-	GliderTicket GliderTicketJSON `gorm:"type:jsonb" json:"ticket"`
-	Signature    string           `json:"signature"`
-	Status       StatusTicket     `json:"status"`
-	TaskID       *uuid.UUID       `gorm:"type:uuid" json:"task_id"`
-	OwnerID      uuid.UUID        `gorm:"type:uuid" json:"owner_id"`
-	NamespaceID  uuid.UUID        `gorm:"type:uuid" json:"namespace_id"`
-	GlideletURN  string           `json:"glidelet_urn"`
-	URL          string           `json:"url"`
-	Password     string           `json:"password"`
+	Name         string       `json:"name"`
+	GliderTicket GliderTicket `gorm:"type:jsonb" json:"ticket"`
+	Signature    string       `json:"signature"`
+	Status       StatusTicket `json:"status"`
+	TaskID       *uuid.UUID   `gorm:"type:uuid" json:"task_id"`
+	OwnerID      uuid.UUID    `gorm:"type:uuid" json:"owner_id"`
+	NamespaceID  uuid.UUID    `gorm:"type:uuid" json:"namespace_id"`
+	GlideletURN  string       `json:"glidelet_urn"`
+	URL          string       `json:"url"`
+	Password     string       `json:"password"`
 }
 
 func (t *Ticket) BeforeCreate(tx *gorm.DB) (err error) {
@@ -28,18 +24,4 @@ func (t *Ticket) BeforeCreate(tx *gorm.DB) (err error) {
 		t.ID = uuid.New()
 	}
 	return
-}
-
-type GliderTicketJSON GliderTicket
-
-func (g GliderTicketJSON) Value() (driver.Value, error) {
-	return json.Marshal(g)
-}
-
-func (g *GliderTicketJSON) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("failed to unmarshal JSONB value: %v", value)
-	}
-	return json.Unmarshal(bytes, g)
 }

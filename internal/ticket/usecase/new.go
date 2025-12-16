@@ -3,6 +3,7 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/NamespaceManager/internal/models"
@@ -27,7 +28,7 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 
 	ticket := models.Ticket{
 		Name:         request.Name,
-		GliderTicket: models.GliderTicketJSON(gliderTicket.Ticket),
+		GliderTicket: gliderTicket.Ticket,
 		Signature:    gliderTicket.Signature,
 		Status:       models.StatusReady,
 		OwnerID:      userID,
@@ -42,10 +43,23 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 	return &gliderTicket, nil
 }
 
-func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId string) ([]models.Ticket, error) {
+func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId uuid.UUID) ([]models.Ticket, error) {
 	return u.ticketRepository.GetTicketByNamespaceID(namespaceId)
 }
 
 func (u *TicketUsecase) GetUserTickets(userID uuid.UUID) ([]models.Ticket, error) {
 	return u.ticketRepository.GetUserTickets(userID)
+}
+
+func (u *TicketUsecase) CancelTicket(ticketID string, accessToken string) error {
+	url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + url.PathEscape(ticketID) + "/cancel"
+	_, err := httpclient.SendRequestWithAccessToken(url, nil, "PATCH", accessToken)
+	if err != nil {
+		return nil
+	}
+
+	if err := u.ticketRepository.CancelTicket(ticketID); err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to cancel ticket: %w", err))
+	}
+	return nil
 }

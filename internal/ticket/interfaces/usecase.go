@@ -14,11 +14,11 @@ type TicketUsecase interface {
 	CreateTask(dtos.CreateTaskRequest, uuid.UUID) error
 	GetTasks(uuid.UUID) ([]models.Task, error)
 
-	GetTicketByNamespaceID(string) ([]models.Ticket, error)
+	GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error)
 	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
 	SaveTicket(dtos.GliderTicketResponse, string, uuid.UUID) error
 	UpdateTicketStatusFromGlidelet([]dtos.StatusRes) error
-	CancelTicket(string) error
+	CancelTicket(ticketID string, accessToken string) error
 	ConvertTicketToTicketRequest(models.Ticket) (dtos.TicketReq, error)
 
 	StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error)

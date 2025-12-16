@@ -150,10 +150,15 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 func (h *TicketHandlers) GetTicketByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("namespace_id")
-		log.Println("namespaceID", namespaceID)
-		tickets, err := h.ticketUsecase.GetTicketByNamespaceID(namespaceID)
+		namespaceUUID, err := uuid.Parse(namespaceID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid namespace_id: %w", err))))
+			return
+		}
+
+		tickets, err := h.ticketUsecase.GetTicketByNamespaceID(namespaceUUID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
 			return
 		}
 		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
@@ -166,7 +171,7 @@ func (h *TicketHandlers) GetUserTickets() gin.HandlerFunc {
 
 		tickets, err := h.ticketUsecase.GetUserTickets(userID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
 			return
 		}
 
@@ -268,27 +273,18 @@ func (h *TicketHandlers) UpdateTicketStatusFromGlidelet() gin.HandlerFunc {
 func (h *TicketHandlers) CancelTicket() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ticketId := c.Param("ticket_id")
-		fmt.Println("ticketId", ticketId)
-		if ticketId == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ticket_id is required"})
-			return
-		}
-		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + url.PathEscape(ticketId) + "/cancel"
 		accessToken := c.MustGet("accessToken").(string)
-		_, err := httpclient.SendRequestWithAccessToken(url, nil, "PATCH", accessToken)
-		if err != nil {
-			if apiErr, ok := err.(apiError.ApiErr); ok {
-				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		if ticketId == "" {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("ticket_id is required"))))
 			return
 		}
-		err = h.ticketUsecase.CancelTicket(ticketId)
+
+		err := h.ticketUsecase.CancelTicket(ticketId, accessToken)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Ticket cancelled successfully"})
+		c.JSON(http.StatusOK, gin.H{"message": "ticket cancelled successfully"})
 	}
 }
