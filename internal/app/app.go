@@ -42,7 +42,7 @@ func NewApp(postgresDB *gorm.DB) *App {
 		// 	// Allow all subdomains of onepointfive.life
 		// 	return strings.HasSuffix(host, "onepointfive.life")
 		// },
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8080", "https://portal.onepointfive.life", "https://admin.onepointfive.life"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
