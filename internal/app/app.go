@@ -3,8 +3,6 @@ package app
 import (
 	"fmt"
 	"log"
-	"net/url"
-	"strings"
 
 	"github.com/NamespaceManager/config"
 	"github.com/NamespaceManager/docs"
@@ -33,17 +31,18 @@ func NewApp(postgresDB *gorm.DB) *App {
 
 	// Configure CORS
 	app.gin.Use(cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			// Parse the origin URL to extract the host
-			u, err := url.Parse(origin)
-			if err != nil {
-				return false
-			}
-			host := u.Host
+		// AllowOriginFunc: func(origin string) bool {
+		// 	// Parse the origin URL to extract the host
+		// 	u, err := url.Parse(origin)
+		// 	if err != nil {
+		// 		return false
+		// 	}
+		// 	host := u.Host
 
-			// Allow all subdomains of onepointfive.life
-			return strings.HasSuffix(host, "onepointfive.life")
-		},
+		// 	// Allow all subdomains of onepointfive.life
+		// 	return strings.HasSuffix(host, "onepointfive.life")
+		// },
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
