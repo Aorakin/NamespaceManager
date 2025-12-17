@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -44,6 +45,9 @@ func SendRequest(url string, payload interface{}, method string) ([]byte, error)
 	}
 	defer resp.Body.Close()
 
+	log.Println("request url", url)
+	log.Println("request method", method)
+	log.Println("response status", resp.StatusCode)
 	// Read response body
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
