@@ -28,7 +28,15 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
 	}
 
+	namespaceID := uuid.Nil
+
 	for _, ticket := range tickets {
+		if namespaceID == uuid.Nil {
+			namespaceID = ticket.NamespaceID
+		} else if ticket.NamespaceID != namespaceID {
+			return apiError.NewBadRequestError(fmt.Errorf("all tickets must belong to the same namespace"))
+		}
+
 		if ticket.Status != models.StatusReady {
 			return apiError.NewBadRequestError(fmt.Errorf("ticket %s is not in 'Ready' status", ticket.GliderTicket.ID))
 		}
