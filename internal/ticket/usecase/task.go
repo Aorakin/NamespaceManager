@@ -3,7 +3,6 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/NamespaceManager/internal/models"
@@ -86,13 +85,11 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (*dtos.CodeServerResp
 	var allResponses []dtos.TicketResponse
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0])
-		log.Println("current resource pool URL", poolURN)
 		if err != nil {
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
 		url := poolURN + "/api/v1/ticket/createList"
-		log.Println(url)
 		response, err := httpclient.SendRequest(url, poolTickets, "POST")
 		if err != nil {
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
@@ -143,8 +140,6 @@ func (u *TicketUsecase) getPoolURN(poolID string, ticketReq dtos.TicketReq) (str
 	if poolInfo.GlideletURN == "" {
 		return ticketReq.GlideletURN, nil
 	}
-
-	log.Printf("Found pool URN: %s for pool ID: %s", poolInfo.GlideletURN, poolID)
 
 	return poolInfo.GlideletURN, nil
 }

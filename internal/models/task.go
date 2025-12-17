@@ -8,12 +8,12 @@ import (
 )
 
 type Task struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey;unique" json:"id"`
-	Title     string    `gorm:"type:varchar(255);not null;default:''" json:"title"`
-	Tickets   []Ticket  `gorm:"foreignKey:TaskID;" json:"tickets"`
-	Status    StatusTicket    `gorm:"type:varchar(50);not null;default:'pending'" json:"status"`
-	OwnerID   uuid.UUID `gorm:"type:uuid;not null" json:"owner_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID    `gorm:"type:uuid;primaryKey;unique" json:"id"`
+	Title     string       `gorm:"type:varchar(255);not null;default:''" json:"title"`
+	Tickets   []Ticket     `gorm:"foreignKey:TaskID;" json:"tickets"`
+	Status    StatusTicket `gorm:"type:varchar(50);not null;default:'pending'" json:"status"`
+	OwnerID   uuid.UUID    `gorm:"type:uuid;not null" json:"owner_id"`
+	CreatedAt time.Time    `json:"created_at"`
 }
 
 func (t *Task) BeforeCreate(tx *gorm.DB) (err error) {

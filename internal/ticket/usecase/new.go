@@ -3,7 +3,6 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 
@@ -27,12 +26,10 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 		return nil, err
 	}
 
-	log.Println("response from CH", string(res))
-	log.Printf("%#v", gliderTicket)
-
 	ticket := models.Ticket{
 		Name:           request.Name,
 		GliderTicket:   gliderTicket.Ticket,
+		GliderTicketID: gliderTicket.Ticket.ID,
 		Signature:      gliderTicket.Signature,
 		Status:         models.StatusReady,
 		OwnerID:        userID,

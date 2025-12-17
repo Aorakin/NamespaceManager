@@ -32,7 +32,7 @@ func (r *TicketRepository) Create(ticket *models.Ticket) error {
 
 func (r *TicketRepository) CancelTicket(ticketID string) error {
 	var ticket models.Ticket
-	if err := r.db.Where("glider_ticket->> 'id' = ?", ticketID).First(&ticket).Error; err != nil {
+	if err := r.db.Where("glider_ticket_id = ?", ticketID).First(&ticket).Error; err != nil {
 		return err
 	}
 
@@ -74,7 +74,7 @@ func (r *TicketRepository) CreateTask(task models.Task) error {
 
 func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData models.StatusTicket) error {
 	var ticket models.Ticket
-	if err := r.db.First(&ticket, "glider_ticket->> 'id' = ?", ticketID).Error; err != nil {
+	if err := r.db.First(&ticket, "glider_ticket_id = ?", ticketID).Error; err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData mo
 		return fmt.Errorf("cannot update ticket with status: %s", ticket.Status)
 	}
 
-	result := r.db.Model(&models.Ticket{}).Where("glider_ticket->> 'id' = ?", ticketID).Update("status", updatedData)
+	result := r.db.Model(&models.Ticket{}).Where("glider_ticket_id = ?", ticketID).Update("status", updatedData)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -95,7 +95,7 @@ func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData mo
 
 func (r *TicketRepository) GetTicketByGliderTicketID(ID uuid.UUID) (models.Ticket, error) {
 	var ticket models.Ticket
-	if err := r.db.First(&ticket, "glider_ticket->> 'id' = ?", ID).Error; err != nil {
+	if err := r.db.First(&ticket, "glider_ticket_id = ?", ID).Error; err != nil {
 		return models.Ticket{}, err
 	}
 	return ticket, nil

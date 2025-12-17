@@ -9,6 +9,7 @@ type Ticket struct {
 	BaseModel
 	Name           string       `json:"name"`
 	GliderTicket   GliderTicket `gorm:"type:jsonb" json:"ticket"`
+	GliderTicketID uuid.UUID    `gorm:"type:uuid;index" json:"glider_ticket_id"`
 	Signature      string       `json:"signature"`
 	Status         StatusTicket `json:"status"`
 	TaskID         *uuid.UUID   `gorm:"type:uuid" json:"task_id"`
