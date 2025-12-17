@@ -45,12 +45,8 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		}
 	}
 
-	codeServerResponse, err := u.sendTickets(request.Tickets)
+	err = u.sendTickets(request.Tickets)
 	if err != nil {
-		return err
-	}
-
-	if err := u.updateTicketInfo(codeServerResponse); err != nil {
 		return err
 	}
 
@@ -74,34 +70,27 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (*dtos.CodeServerResponse, error) {
+func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) error {
 	ticketsByPool, err := u.groupTicketsByPool(ticketIDs)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var allResponses []dtos.TicketResponse
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
 		url := poolURN + "/api/v1/ticket/createList"
-		response, err := httpclient.SendRequest(url, poolTickets, "POST")
+		_, err = httpclient.SendRequest(url, poolTickets, "POST")
 		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
+			return apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
 		}
 
-		var poolResponse dtos.CodeServerResponse
-		if err := json.Unmarshal(response, &poolResponse); err != nil {
-			return nil, apiError.NewBadRequestError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
-		}
-
-		allResponses = append(allResponses, poolResponse.TicketResponse...)
 	}
 
-	return &dtos.CodeServerResponse{TicketResponse: allResponses}, nil
+	return nil
 }
 
 func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]dtos.TicketReq, error) {
