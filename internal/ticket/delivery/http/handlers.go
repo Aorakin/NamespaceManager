@@ -1,19 +1,15 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
 
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
 	"github.com/NamespaceManager/internal/ticket/mapper"
 	"github.com/NamespaceManager/internal/utils"
 	apiError "github.com/NamespaceManager/pkg/api_error"
-	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/NamespaceManager/pkg/response"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -151,80 +147,6 @@ func (h *TicketHandlers) GetUserTickets() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
-	}
-}
-
-func (h *TicketHandlers) GetTicketFromCH() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ticketId := c.Param("ticket_id")
-		accessToken := c.MustGet("accessToken").(string)
-		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/" + url.PathEscape(ticketId)
-		body, err := httpclient.SendRequestWithAccessToken(url, nil, "GET", accessToken)
-		if err != nil {
-			if apiErr, ok := err.(apiError.ApiErr); ok {
-				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		var ticketResponse dtos.GliderTicketResponse
-		if err := json.Unmarshal(body, &ticketResponse); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-			return
-		}
-		c.JSON(http.StatusOK, ticketResponse)
-	}
-}
-
-func (h *TicketHandlers) RequestTicketToCH() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID := c.MustGet("userID").(uuid.UUID)
-		accessToken := c.MustGet("accessToken").(string)
-
-		var ticketReq dtos.RequestTicketDTO
-		if err := c.ShouldBindJSON(&ticketReq); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		}
-		url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
-		res, err := httpclient.SendRequestWithAccessToken(url, ticketReq, "POST", accessToken)
-		if err != nil {
-			if apiErr, ok := err.(apiError.ApiErr); ok {
-				c.JSON(apiErr.Status(), gin.H{"error": apiErr.Error()})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		var gliderTicket dtos.GliderTicketResponse
-		if err := json.Unmarshal(res, &gliderTicket); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-			return
-		}
-		// status, gliderTicket, err := h.ticketUsecase.RequestTicketToCH(ticketReq)
-		// fmt.Println("gliderTicket", gliderTicket)
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// 	return
-		// }
-		// // get ticket from ch เพื่อเอาไปเก็บ db
-		// // status, ticketResponses, err := h.ticketUsecase.GetTicketFromCH(ticketdto.ID)
-		// // if err != nil {
-		// // 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		// // 	return
-		// // }
-		// if status != http.StatusCreated {
-		// 	c.JSON(status, gin.H{"error": "Failed to create ticket from Clearinghouse"})
-		// 	return
-		// }
-		err = h.ticketUsecase.SaveTicket(gliderTicket, ticketReq.Name, userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusCreated, gin.H{"ticket": gliderTicket})
-
 	}
 }
 

@@ -71,7 +71,7 @@ func (u *TicketUsecase) computeTicketStatus(podStatuses []dtos.PodStatus) models
 
 	for _, pod := range podStatuses {
 		podStatus := strings.ToLower(pod.Status)
-		
+
 		if podStatus == "inactive" {
 			return models.StatusExpired
 		}
@@ -95,15 +95,19 @@ func (u *TicketUsecase) computeTicketStatus(podStatuses []dtos.PodStatus) models
 func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID)
 	if err != nil {
-		return err
+		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets by task ID: %w", err))
+	}
+
+	if len(tickets) == 0 {
+		return nil
 	}
 
 	var (
-		anyFailed   bool
-		anyStopped  bool
-		anyPending  bool
-		anyExpired  bool
-		allRedeemed = true
+		anyFailed    bool
+		anyStopped   bool
+		anyPending   bool
+		expiredCount int
+		allRedeemed  = true
 	)
 
 	for _, t := range tickets {
@@ -121,7 +125,7 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 			allRedeemed = false
 
 		case models.StatusExpired:
-			anyExpired = true
+			expiredCount++
 			allRedeemed = false
 
 		case models.StatusRedeemed:
@@ -131,11 +135,13 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 		}
 	}
 
+	allExpired := expiredCount == len(tickets)
+
 	var taskStatus models.StatusTicket
 
-	// Apply your priority:
+	// Apply priority: all expired > any failed > any stopped > any pending > all redeemed
 	switch {
-	case anyExpired:
+	case allExpired:
 		taskStatus = models.StatusExpired
 	case anyFailed:
 		taskStatus = models.StatusFailed

@@ -23,7 +23,7 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 
 	var gliderTicket dtos.GliderTicketResponse
 	if err := json.Unmarshal(res, &gliderTicket); err != nil {
-		return nil, err
+		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal glider ticket response: %w", err))
 	}
 
 	ticket := models.Ticket{

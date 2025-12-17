@@ -67,7 +67,7 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResponse) error {
 	for _, res := range codeServerResponse.TicketResponse {
 		if err := u.ticketRepository.UpdateCodeServerInfo(res.TicketID, res.URL, res.Password); err != nil {
-			return fmt.Errorf("failed to update ticket info: %w", err)
+			return apiError.NewInternalServerError(fmt.Errorf("failed to update ticket info: %w", err))
 		}
 	}
 
@@ -110,7 +110,7 @@ func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]
 	for _, gliderTicketID := range ticketIDs {
 		ticketReq, err := u.toTicketRequest(gliderTicketID)
 		if err != nil {
-			return nil, err
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to convert ticket to ticket request: %w", err))
 		}
 
 		poolID := ticketReq.Spec.PoolID.String()
