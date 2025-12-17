@@ -3,7 +3,6 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -90,62 +89,6 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 
 //		return status, ticket, nil
 //	}
-
-func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) error {
-	b, err := json.MarshalIndent(req, "", "  ")
-	if err != nil {
-		log.Println("json marshal error:", err)
-		return err
-	}
-	log.Println(string(b))
-	for _, statusRes := range req {
-		if statusRes.HasError {
-			err := u.ticketRepository.UpdateTicketStatus(statusRes.TicketID, models.StatusFailed)
-			if err != nil {
-				fmt.Printf("failed to update ticket %s to status failed: %v", statusRes.TicketID, err)
-			}
-			continue
-		}
-
-		if len(statusRes.PodStatus) == 0 {
-			fmt.Printf("Warning: No pod status found for ticketId: %s. Skipping update.", statusRes.TicketID)
-			continue
-		}
-
-		var finalTicketStatus models.StatusTicket
-		ticketRunning := true
-
-		for _, pod := range statusRes.PodStatus {
-			if strings.ToLower(pod.Status) == "inactive" {
-				finalTicketStatus = models.StatusExpired
-				ticketRunning = false
-				break
-			}
-
-			if strings.ToLower(pod.Status) == "pending" {
-				finalTicketStatus = models.StatusPending
-				ticketRunning = false
-				break
-			}
-
-			if strings.ToLower(pod.Status) != "running" {
-				ticketRunning = false
-			}
-		}
-
-		if ticketRunning {
-			finalTicketStatus = models.StatusRedeemed
-		}
-
-		fmt.Printf("Updating ticket %s to status %s", statusRes.TicketID, finalTicketStatus)
-		err := u.ticketRepository.UpdateTicketStatus(statusRes.TicketID, finalTicketStatus)
-		if err != nil {
-			fmt.Printf("failed to update ticket %s to status %s: %v", statusRes.TicketID, finalTicketStatus, err)
-		}
-	}
-
-	return nil
-}
 
 func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
 	task, err := u.ticketRepository.GetTasksByID(taskID)

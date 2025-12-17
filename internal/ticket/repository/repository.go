@@ -141,3 +141,23 @@ func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID) ([]models.Ticket
 	}
 	return tickets, nil
 }
+
+// BatchUpdateTicketStatuses updates multiple ticket statuses in a single transaction
+func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]models.StatusTicket) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for ticketID, status := range updates {
+			result := tx.Model(&models.Ticket{}).
+				Where("glider_ticket_id = ?", ticketID).
+				Update("status", status)
+
+			if result.Error != nil {
+				return fmt.Errorf("failed to update ticket %s: %w", ticketID, result.Error)
+			}
+		}
+		return nil
+	})
+}

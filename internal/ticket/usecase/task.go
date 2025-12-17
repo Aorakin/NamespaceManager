@@ -19,16 +19,6 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get tasks: %w", err))
 	}
 
-	for _, task := range tasks {
-		if err := u.updateTaskStatus(task.ID); err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to update task status for task %s: %v", task.ID, err))
-		}
-	}
-
-	tasks, err = u.ticketRepository.GetTasks(ownerID)
-	if err != nil {
-		return nil, err
-	}
 	return tasks, nil
 }
 
@@ -158,62 +148,3 @@ func (u *TicketUsecase) toTicketRequest(ticketID uuid.UUID) (*dtos.TicketReq, er
 	return ticketReq, nil
 }
 
-func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
-	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID)
-	if err != nil {
-		return err
-	}
-
-	var (
-		anyFailed   bool
-		anyStopped  bool
-		anyPending  bool
-		anyExpired  bool
-		allRedeemed = true
-	)
-
-	for _, t := range tickets {
-		switch t.Status {
-		case models.StatusFailed:
-			anyFailed = true
-			allRedeemed = false
-
-		case models.StatusStopped:
-			anyStopped = true
-			allRedeemed = false
-
-		case models.StatusPending:
-			anyPending = true
-			allRedeemed = false
-
-		case models.StatusExpired:
-			anyExpired = true
-			allRedeemed = false
-
-		case models.StatusRedeemed:
-			// still possibly all redeemed
-		default:
-			allRedeemed = false
-		}
-	}
-
-	var taskStatus models.StatusTicket
-
-	// Apply your priority:
-	switch {
-	case anyExpired:
-		taskStatus = models.StatusExpired
-	case anyFailed:
-		taskStatus = models.StatusFailed
-	case anyStopped:
-		taskStatus = models.StatusStopped
-	case anyPending:
-		taskStatus = models.StatusPending
-	case allRedeemed:
-		taskStatus = models.StatusRedeemed
-	default:
-		taskStatus = models.StatusFailed
-	}
-
-	return u.ticketRepository.UpdateTaskStatus(taskID, taskStatus)
-}

@@ -24,4 +24,5 @@ type TicketRepository interface {
 
 	GetTicketsByGliderTicketIDs(gliderTicketIDs []uuid.UUID) ([]models.Ticket, error)
 	UpdateCodeServerInfo(ticketID uuid.UUID, url string, password string) error
+	BatchUpdateTicketStatuses(updates map[uuid.UUID]models.StatusTicket) error
 }
