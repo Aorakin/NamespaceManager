@@ -23,3 +23,4 @@ type UserTicketResponse struct {
 	Signature    string              `json:"signature"`
 	Status       string              `json:"status"`
 }
+

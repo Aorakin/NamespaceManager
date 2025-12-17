@@ -3,6 +3,7 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/NamespaceManager/internal/models"
@@ -47,7 +48,7 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		}
 	}
 
-	codeServerResponse, err := u.sendTicket(request.Tickets)
+	codeServerResponse, err := u.sendTickets(request.Tickets)
 	if err != nil {
 		return err
 	}
@@ -76,29 +77,73 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) sendTicket(tickets []uuid.UUID) (*dtos.CodeServerResponse, error) {
-	var ticketsReq []dtos.TicketReq
-	for _, gliderTicketID := range tickets {
-		ticket, err := u.toTicketRequest(gliderTicketID)
-		if err != nil {
-			return nil, err
-		}
-		ticketsReq = append(ticketsReq, *ticket)
-	}
-
-	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/createList"
-	response, err := httpclient.SendRequest(url, ticketsReq, "POST")
+func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (*dtos.CodeServerResponse, error) {
+	ticketsByPool, err := u.groupTicketsByPool(ticketIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	var codeServerResponse dtos.CodeServerResponse
-	err = json.Unmarshal(response, &codeServerResponse)
-	if err != nil {
-		return nil, apiError.NewBadRequestError(fmt.Errorf("failed to unmarshal response: %w", err))
+	var allResponses []dtos.TicketResponse
+	for poolID, poolTickets := range ticketsByPool {
+		poolURN, err := u.getPoolURN(poolID, poolTickets[0])
+		log.Println("current resource pool URL", poolURN)
+		if err != nil {
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+		}
+
+		url := poolURN + "/api/v1/ticket/createList"
+		response, err := httpclient.SendRequest(url, poolTickets, "POST")
+		if err != nil {
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
+		}
+
+		var poolResponse dtos.CodeServerResponse
+		if err := json.Unmarshal(response, &poolResponse); err != nil {
+			return nil, apiError.NewBadRequestError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
+		}
+
+		allResponses = append(allResponses, poolResponse.TicketResponse...)
 	}
 
-	return &codeServerResponse, nil
+	return &dtos.CodeServerResponse{TicketResponse: allResponses}, nil
+}
+
+func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]dtos.TicketReq, error) {
+	ticketsByPool := make(map[string][]dtos.TicketReq)
+
+	for _, gliderTicketID := range ticketIDs {
+		ticketReq, err := u.toTicketRequest(gliderTicketID)
+		if err != nil {
+			return nil, err
+		}
+
+		poolID := ticketReq.Spec.PoolID.String()
+		ticketsByPool[poolID] = append(ticketsByPool[poolID], *ticketReq)
+	}
+
+	return ticketsByPool, nil
+}
+
+func (u *TicketUsecase) getPoolURN(poolID string, ticketReq dtos.TicketReq) (string, error) {
+	url := os.Getenv("CLEARINGHOUSE_URL") + "/resource/pool/" + poolID
+	response, err := httpclient.SendRequest(url, nil, "GET")
+
+	if err != nil {
+		return ticketReq.GlideletURN, nil
+	}
+
+	var poolInfo struct {
+		GlideletURN string `json:"glidelet_urn"`
+	}
+	if err := json.Unmarshal(response, &poolInfo); err != nil {
+		return ticketReq.GlideletURN, nil
+	}
+
+	if poolInfo.GlideletURN == "" {
+		return ticketReq.GlideletURN, nil
+	}
+
+	return poolInfo.GlideletURN, nil
 }
 
 func (u *TicketUsecase) toTicketRequest(ticketID uuid.UUID) (*dtos.TicketReq, error) {
