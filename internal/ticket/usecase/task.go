@@ -92,6 +92,7 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (*dtos.CodeServerResp
 		}
 
 		url := poolURN + "/api/v1/ticket/createList"
+		log.Println(url)
 		response, err := httpclient.SendRequest(url, poolTickets, "POST")
 		if err != nil {
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
@@ -142,6 +143,8 @@ func (u *TicketUsecase) getPoolURN(poolID string, ticketReq dtos.TicketReq) (str
 	if poolInfo.GlideletURN == "" {
 		return ticketReq.GlideletURN, nil
 	}
+
+	log.Printf("Found pool URN: %s for pool ID: %s", poolInfo.GlideletURN, poolID)
 
 	return poolInfo.GlideletURN, nil
 }
