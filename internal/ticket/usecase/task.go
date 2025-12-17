@@ -3,6 +3,7 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/NamespaceManager/internal/models"
@@ -85,7 +86,7 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) error {
 		url := poolURN + "/api/v1/ticket/createList"
 		response, err := httpclient.SendRequest(url, poolTickets, "POST")
 		if err != nil {
-			print(string(response), err)
+			log.Println(string(response), err)
 			return apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
 		}
 	}
@@ -110,7 +111,7 @@ func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]
 }
 
 func (u *TicketUsecase) getPoolURN(poolID string, defaultURL string) (string, error) {
-	url := os.Getenv("CLEARINGHOUSE_URL") + "/resource/pool/" + poolID
+	url := os.Getenv("CLEARINGHOUSE_URL") + "/resources/pool/" + poolID
 	response, err := httpclient.SendRequest(url, nil, "GET")
 
 	if err != nil {
