@@ -85,11 +85,9 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) error {
 		url := poolURN + "/api/v1/ticket/createList"
 		response, err := httpclient.SendRequest(url, poolTickets, "POST")
 		if err != nil {
+			print(string(response), err)
 			return apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
 		}
-
-		print(string(response))
-
 	}
 
 	return nil
