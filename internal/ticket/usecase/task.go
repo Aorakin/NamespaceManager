@@ -74,7 +74,7 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (*dtos.CodeServerResp
 
 	var allResponses []dtos.TicketResponse
 	for poolID, poolTickets := range ticketsByPool {
-		poolURN, err := u.getPoolURN(poolID, poolTickets[0])
+		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
@@ -112,23 +112,23 @@ func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]
 	return ticketsByPool, nil
 }
 
-func (u *TicketUsecase) getPoolURN(poolID string, ticketReq dtos.TicketReq) (string, error) {
+func (u *TicketUsecase) getPoolURN(poolID string, defaultURL string) (string, error) {
 	url := os.Getenv("CLEARINGHOUSE_URL") + "/resource/pool/" + poolID
 	response, err := httpclient.SendRequest(url, nil, "GET")
 
 	if err != nil {
-		return ticketReq.GlideletURN, nil
+		return defaultURL, nil
 	}
 
 	var poolInfo struct {
 		GlideletURN string `json:"glidelet_urn"`
 	}
 	if err := json.Unmarshal(response, &poolInfo); err != nil {
-		return ticketReq.GlideletURN, nil
+		return defaultURL, nil
 	}
 
 	if poolInfo.GlideletURN == "" {
-		return ticketReq.GlideletURN, nil
+		return defaultURL, nil
 	}
 
 	return poolInfo.GlideletURN, nil
@@ -147,4 +147,3 @@ func (u *TicketUsecase) toTicketRequest(ticketID uuid.UUID) (*dtos.TicketReq, er
 
 	return ticketReq, nil
 }
-

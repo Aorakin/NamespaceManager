@@ -3,7 +3,6 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/NamespaceManager/internal/models"
@@ -11,7 +10,8 @@ import (
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
 	userInterfaces "github.com/NamespaceManager/internal/users/interfaces"
-	"github.com/NamespaceManager/internal/utils"
+	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -74,62 +74,75 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 	return nil
 }
 
-// func (u *TicketUsecase) GetTicketFromCH(ticketId string) (int, dtos.GliderTicketResponse, error) {
-// 	url := fmt.Sprintf("%s/tickets/%s", os.Getenv("CLEARINGHOUSE_URL"), ticketId)
-
-// 	status, body, err := utils.SendRequest(url, nil, "GET")
-// 	if err != nil {
-// 		return 0, dtos.GliderTicketResponse{}, err
-// 	}
-// 	var ticket dtos.GliderTicketResponse
-// 	err = json.Unmarshal(body, &ticket)
-// 	if err != nil {
-// 		return 0, dtos.GliderTicketResponse{}, fmt.Errorf("error : Failed to parse response: %w", err)
-// 	}
-
-//		return status, ticket, nil
-//	}
-
 func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
 	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
-		return nil, err
+		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get task by ID: %w", err))
 	}
 	if task.OwnerID != userID {
-		return nil, fmt.Errorf("unauthorized")
+		return nil, apiError.NewForbiddenError(fmt.Errorf("user does not own the task"))
 	}
 
-	var stopTaskPayload dtos.StopTaskTickets
+	// Group tickets by resource pool
+	type poolInfo struct {
+		ticketIDs  []uuid.UUID
+		defaultURL string
+	}
+	ticketsByPool := make(map[uuid.UUID]*poolInfo)
+
 	for _, ticket := range task.Tickets {
-		stopTaskPayload.TicketIDs = append(stopTaskPayload.TicketIDs, ticket.GliderTicket.ID)
+		poolID := ticket.ResourcePoolID
+		if _, exists := ticketsByPool[poolID]; !exists {
+			ticketsByPool[poolID] = &poolInfo{
+				ticketIDs:  []uuid.UUID{},
+				defaultURL: ticket.GlideletURN,
+			}
+		}
+		ticketsByPool[poolID].ticketIDs = append(ticketsByPool[poolID].ticketIDs, ticket.GliderTicketID)
 	}
 
-	url := os.Getenv("GLIDELET_URL") + ":9443" + "/api/v1/ticket/deletePods"
+	statusUpdates := make(map[uuid.UUID]models.StatusTicket)
+	var allResponses []dtos.StopTaskResponse
 
-	status, body, err := utils.SendRequest(url, stopTaskPayload, "POST")
-	if err != nil {
+	for poolID, info := range ticketsByPool {
+		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
+		if err != nil {
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+		}
+
+		payload := dtos.StopTaskTickets{TicketIDs: info.ticketIDs}
+		url := poolURL + "/api/v1/ticket/deletePods"
+
+		body, err := httpclient.SendRequest(url, payload, "POST")
+		if err != nil {
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to stop tickets in pool %s: %w", poolID, err))
+		}
+
+		var response []dtos.StopTaskResponse
+		if err := json.Unmarshal(body, &response); err != nil {
+			return nil, apiError.NewBadRequestError(fmt.Errorf("failed to parse stop task response from pool %s: %w", poolID, err))
+		}
+
+		for _, res := range response {
+			ticketStatus := models.StatusFailed
+			if strings.ToLower(res.Status) == "deleted" {
+				ticketStatus = models.StatusStopped
+			}
+			statusUpdates[res.TicketID] = ticketStatus
+		}
+
+		allResponses = append(allResponses, response...)
+	}
+
+	if len(statusUpdates) > 0 {
+		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
+			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+		}
+	}
+
+	if err := u.updateTaskStatus(taskID); err != nil {
 		return nil, err
 	}
 
-	if status > 299 || status < 200 {
-		return body, fmt.Errorf("failed to stop task, status code: %d, response: %s", status, string(body))
-	}
-
-	var response []dtos.StopTaskResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse stop task response: %w", err)
-	}
-
-	for _, res := range response {
-		ticketStatus := models.StatusFailed
-		if strings.ToLower(res.Status) == "deleted" {
-			ticketStatus = models.StatusStopped
-		}
-		err := u.ticketRepository.UpdateTicketStatus(res.TicketID, ticketStatus)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update ticket %s status: %w", res.TicketID, err)
-		}
-	}
-
-	return body, err
+	return allResponses, nil
 }
