@@ -100,6 +100,7 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
 		accessToken := c.MustGet("accessToken").(string)
+		username := c.MustGet("firstname").(string) + " " + c.MustGet("lastname").(string)
 
 		var request dtos.RequestTicketDTO
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -107,7 +108,7 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 			return
 		}
 
-		gliderTicket, err := h.ticketUsecase.RequestTicket(request, accessToken, userID)
+		gliderTicket, err := h.ticketUsecase.RequestTicket(request, accessToken, userID, username)
 		if err != nil {
 			c.JSON(response.ErrorResponseBuilder(err))
 			return
