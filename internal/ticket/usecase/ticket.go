@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken string, userID uuid.UUID) (*dtos.GliderTicketResponse, error) {
+func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken string, userID uuid.UUID, username string) (*dtos.GliderTicketResponse, error) {
 	// Call external service to request ticket
 	url := os.Getenv("CLEARINGHOUSE_URL") + "/tickets/"
 	res, err := httpclient.SendRequestWithAccessToken(url, request, "POST", accessToken)
@@ -33,6 +33,7 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 		Signature:      gliderTicket.Signature,
 		Status:         models.StatusReady,
 		OwnerID:        userID,
+		OwnerName:      username,
 		NamespaceID:    request.NamespaceID,
 		ResourcePoolID: gliderTicket.Ticket.ResourcePoolID,
 		GlideletURN:    gliderTicket.Ticket.GlideletURN,

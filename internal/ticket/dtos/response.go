@@ -22,5 +22,6 @@ type UserTicketResponse struct {
 	GliderTicket models.GliderTicket `json:"ticket"`
 	Signature    string              `json:"signature"`
 	Status       string              `json:"status"`
+	OwnerName    string              `json:"owner_name"`
 }
 

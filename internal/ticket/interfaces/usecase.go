@@ -19,7 +19,7 @@ type TicketUsecase interface {
 	StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error)
 
 	// new
-	RequestTicket(dtos.RequestTicketDTO, string, uuid.UUID) (*dtos.GliderTicketResponse, error)
+	RequestTicket(dtos.RequestTicketDTO, string, uuid.UUID, string) (*dtos.GliderTicketResponse, error)
 	CreateTask(request *dtos.CreateTaskRequest, userID uuid.UUID) error
 	GetTasks(userID uuid.UUID) ([]models.Task, error)
 }

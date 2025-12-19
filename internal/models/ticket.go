@@ -14,6 +14,7 @@ type Ticket struct {
 	Status         StatusTicket `json:"status"`
 	TaskID         *uuid.UUID   `gorm:"type:uuid" json:"task_id"`
 	OwnerID        uuid.UUID    `gorm:"type:uuid" json:"owner_id"`
+	OwnerName      string       `json:"owner_name"`
 	NamespaceID    uuid.UUID    `gorm:"type:uuid" json:"namespace_id"`
 	GlideletURN    string       `json:"glidelet_urn"`
 	ResourcePoolID uuid.UUID    `gorm:"type:uuid" json:"resource_pool_id"`

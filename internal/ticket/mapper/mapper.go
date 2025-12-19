@@ -16,6 +16,7 @@ func ToUserTicketResponse(ticket models.Ticket) dtos.UserTicketResponse {
 		GliderTicket: models.GliderTicket(ticket.GliderTicket),
 		Signature:    ticket.Signature,
 		Status:       string(ticket.Status),
+		OwnerName:    ticket.OwnerName,
 	}
 }
 
