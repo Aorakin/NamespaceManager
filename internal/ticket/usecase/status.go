@@ -15,7 +15,7 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		return nil
 	}
 
-	// Step 1: Compute new statuses for all tickets (in-memory, no DB calls)
+	ticketCodeServerUpdates := dtos.CodeServerResponse{TicketResponse: []dtos.TicketResponse{}}
 	ticketUpdates := make(map[uuid.UUID]models.StatusTicket)
 	ticketIDs := make([]uuid.UUID, 0, len(req))
 
@@ -32,6 +32,13 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 			continue
 		}
 
+		if statusRes.CodeServerURL != "" {
+			ticketCodeServerUpdates.TicketResponse = append(ticketCodeServerUpdates.TicketResponse, dtos.TicketResponse{
+				TicketID: statusRes.TicketID,
+				URL:      statusRes.CodeServerURL,
+				Password: statusRes.Password,
+			})
+		}
 		finalStatus := u.computeTicketStatus(statusRes.PodStatus)
 		ticketUpdates[statusRes.TicketID] = finalStatus
 	}
@@ -39,6 +46,10 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 	// Step 2: Batch update all ticket statuses in one transaction
 	if err := u.ticketRepository.BatchUpdateTicketStatuses(ticketUpdates); err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+	}
+
+	if err := u.updateTicketInfo(&ticketCodeServerUpdates); err != nil {
+		return err
 	}
 
 	// Step 3: Get all affected tickets with their task IDs in ONE query

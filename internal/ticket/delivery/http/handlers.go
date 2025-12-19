@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -159,7 +160,9 @@ func (h *TicketHandlers) UpdateTicketStatusFromGlidelet() gin.HandlerFunc {
 			return
 		}
 
-		log.Println(req)
+		if jsonData, err := json.MarshalIndent(req, "", "  "); err == nil {
+			log.Println(string(jsonData))
+		}
 
 		err := h.ticketUsecase.UpdateTicketStatusFromGlidelet(req)
 		if err != nil {

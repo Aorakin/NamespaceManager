@@ -7,7 +7,7 @@ type CodeServerResponse struct {
 }
 
 type TicketResponse struct {
-	TicketID       uuid.UUID `json:"ticket_id"`
+	TicketID uuid.UUID `json:"ticket_id"`
 	URL      string    `json:"host_name"`
 	Password string    `json:"password"`
 }

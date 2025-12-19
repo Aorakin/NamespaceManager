@@ -3,9 +3,11 @@ package dtos
 import "github.com/google/uuid"
 
 type StatusRes struct {
-	TicketID  uuid.UUID   `json:"ticketId"`
-	PodStatus []PodStatus `json:"status"`
-	HasError  bool        `json:"hasError"`
+	TicketID      uuid.UUID   `json:"ticketId"`
+	PodStatus     []PodStatus `json:"status"`
+	HasError      bool        `json:"hasError"`
+	CodeServerURL string      `json:"codeServerUrl,omitempty"`
+	Password      string      `json:"password,omitempty"`
 }
 
 type PodStatus struct {
