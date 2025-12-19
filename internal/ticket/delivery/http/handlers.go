@@ -153,11 +153,13 @@ func (h *TicketHandlers) GetUserTickets() gin.HandlerFunc {
 func (h *TicketHandlers) UpdateTicketStatusFromGlidelet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req []dtos.StatusRes
-		log.Println(req)
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
 		}
+
+		log.Println(req)
+
 		err := h.ticketUsecase.UpdateTicketStatusFromGlidelet(req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
