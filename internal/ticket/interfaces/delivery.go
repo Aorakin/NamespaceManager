@@ -12,4 +12,5 @@ type TicketHandler interface {
 	UpdateTicketStatusFromGlidelet() gin.HandlerFunc
 	CancelTicket() gin.HandlerFunc
 	RequestTicket() gin.HandlerFunc
+	CancelTask() gin.HandlerFunc
 }

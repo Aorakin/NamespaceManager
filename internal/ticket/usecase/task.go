@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -59,6 +60,79 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 	}
 
 	return u.ticketRepository.CreateTask(task)
+}
+
+func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
+	task, err := u.ticketRepository.GetTasksByID(taskID)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to get task by ID: %w", err))
+	}
+	if task.OwnerID != userID {
+		return apiError.NewForbiddenError(fmt.Errorf("user does not own the task"))
+	}
+
+	// Group tickets by resource pool
+	type poolInfo struct {
+		ticketIDs  []uuid.UUID
+		defaultURL string
+	}
+	ticketsByPool := make(map[uuid.UUID]*poolInfo)
+
+	for _, ticket := range task.Tickets {
+		poolID := ticket.ResourcePoolID
+		if _, exists := ticketsByPool[poolID]; !exists {
+			ticketsByPool[poolID] = &poolInfo{
+				ticketIDs:  []uuid.UUID{},
+				defaultURL: ticket.GlideletURN,
+			}
+		}
+		ticketsByPool[poolID].ticketIDs = append(ticketsByPool[poolID].ticketIDs, ticket.GliderTicketID)
+	}
+
+	statusUpdates := make(map[uuid.UUID]models.StatusTicket)
+	var allResponses []dtos.StopTaskResponse
+
+	for poolID, info := range ticketsByPool {
+		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
+		if err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+		}
+
+		payload := dtos.StopTaskTickets{TicketIDs: info.ticketIDs}
+		url := poolURL + "/api/v1/ticket/cancelPods"
+
+		body, err := httpclient.SendRequest(url, payload, "PATCH")
+		if err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
+		}
+
+		var response []dtos.StopTaskResponse
+		if err := json.Unmarshal(body, &response); err != nil {
+			return apiError.NewBadRequestError(fmt.Errorf("failed to parse cancel task response from pool %s: %w", poolID, err))
+		}
+
+		for _, res := range response {
+			ticketStatus := models.StatusFailed
+			if strings.ToLower(res.Status) == "cancelled" {
+				ticketStatus = models.StatusStopped
+			}
+			statusUpdates[res.TicketID] = ticketStatus
+		}
+
+		allResponses = append(allResponses, response...)
+	}
+
+	if len(statusUpdates) > 0 {
+		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+		}
+	}
+
+	if err := u.updateTaskStatus(taskID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResponse) error {

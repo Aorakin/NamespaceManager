@@ -36,4 +36,5 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.POST("/tasks", ticketHandler.UseTickets())
 	// ticketGroup.GET("/tasks", ticketHandler.GetTasks())
 	ticketGroup.PATCH("/tasks/:task_id/stop", ticketHandler.StopTask())
+	ticketGroup.PATCH("/tasks/:task_id/cancel", ticketHandler.CancelTask())
 }

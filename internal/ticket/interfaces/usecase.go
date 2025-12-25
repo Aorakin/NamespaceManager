@@ -17,6 +17,7 @@ type TicketUsecase interface {
 	CancelTicket(ticketID string, accessToken string) error
 
 	StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error)
+	CancelTask(userID uuid.UUID, taskID uuid.UUID) error
 
 	// new
 	RequestTicket(dtos.RequestTicketDTO, string, uuid.UUID, string) (*dtos.GliderTicketResponse, error)

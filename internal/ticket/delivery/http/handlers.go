@@ -191,3 +191,28 @@ func (h *TicketHandlers) CancelTicket() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "ticket cancelled successfully"})
 	}
 }
+
+func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.MustGet("userID").(uuid.UUID)
+		if userID == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		taskIDParam := c.Param("task_id")
+		taskUUID, err := uuid.Parse(taskIDParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task_id"})
+			return
+		}
+
+		response, err := h.ticketUsecase.StopTask(userID, taskUUID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, response)
+	}
+}
