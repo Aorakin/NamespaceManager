@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -90,7 +89,6 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 	}
 
 	statusUpdates := make(map[uuid.UUID]models.StatusTicket)
-	var allResponses []dtos.StopTaskResponse
 
 	for poolID, info := range ticketsByPool {
 		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
@@ -101,25 +99,14 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 		payload := dtos.StopTaskTickets{TicketIDs: info.ticketIDs}
 		url := poolURL + "/api/v1/ticket/cancelPods"
 
-		body, err := httpclient.SendRequest(url, payload, "PATCH")
+		_, err = httpclient.SendRequest(url, payload, "PATCH")
 		if err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
 		}
-
-		var response []dtos.StopTaskResponse
-		if err := json.Unmarshal(body, &response); err != nil {
-			return apiError.NewBadRequestError(fmt.Errorf("failed to parse cancel task response from pool %s: %w", poolID, err))
+		for _, ticketID := range info.ticketIDs {
+			statusUpdates[ticketID] = models.StatusReady
 		}
 
-		for _, res := range response {
-			ticketStatus := models.StatusFailed
-			if strings.ToLower(res.Status) == "cancelled" {
-				ticketStatus = models.StatusStopped
-			}
-			statusUpdates[res.TicketID] = ticketStatus
-		}
-
-		allResponses = append(allResponses, response...)
 	}
 
 	if len(statusUpdates) > 0 {
@@ -128,8 +115,9 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 		}
 	}
 
-	if err := u.updateTaskStatus(taskID); err != nil {
-		return err
+	err = u.ticketRepository.DeleteTask(taskID)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to delete task: %w", err))
 	}
 
 	return nil
