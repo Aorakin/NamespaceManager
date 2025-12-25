@@ -203,13 +203,13 @@ func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
 		taskIDParam := c.Param("task_id")
 		taskUUID, err := uuid.Parse(taskIDParam)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task_id"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("")))
 			return
 		}
 
 		err = h.ticketUsecase.CancelTask(userID, taskUUID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
 
