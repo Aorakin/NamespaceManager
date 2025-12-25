@@ -207,12 +207,12 @@ func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
 			return
 		}
 
-		response, err := h.ticketUsecase.StopTask(userID, taskUUID)
+		err = h.ticketUsecase.CancelTask(userID, taskUUID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, nil)
 	}
 }
