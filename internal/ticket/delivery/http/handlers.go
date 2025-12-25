@@ -203,7 +203,7 @@ func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
 		taskIDParam := c.Param("task_id")
 		taskUUID, err := uuid.Parse(taskIDParam)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("")))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("invalid task_id")))
 			return
 		}
 
