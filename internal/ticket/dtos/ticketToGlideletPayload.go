@@ -11,6 +11,7 @@ type TicketReq struct {
 	ReferenceTicketID string     `json:"reference_ticket_id"`
 	Signature         string     `json:"signature"`
 	Spec              GliderSpec `json:"spec"`
+	NodeName          string     `json:"node_name"`
 }
 
 type GliderSpec struct {

@@ -53,6 +53,7 @@ func ToTicketRequest(ticket models.Ticket) (*dtos.TicketReq, error) {
 		NamespaceURN:      ticket.GliderTicket.NamespaceID.String(),
 		RedeemTimeout:     fmt.Sprintf("%d", ticket.GliderTicket.RedeemTimeout),
 		ReferenceTicketID: ticket.GliderTicket.ReferenceTicketID.String(),
+		NodeName:          ticket.GliderTicket.NodeName,
 		Signature:         ticket.Signature,
 		Spec: dtos.GliderSpec{
 			Type:      dtos.ResourceUnitType(ticket.GliderTicket.Spec.Type),
