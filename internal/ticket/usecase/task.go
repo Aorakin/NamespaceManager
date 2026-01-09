@@ -140,6 +140,7 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) error {
 	}
 
 	for poolID, poolTickets := range ticketsByPool {
+		log.Printf("[SEND TICKETS] sending request to pool %s, with %d tickets", poolID, len(poolTickets))
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
