@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -46,16 +47,17 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		}
 	}
 
-	err = u.sendTickets(request.Tickets)
+	startTime, err := u.sendTickets(request.Tickets)
 	if err != nil {
 		return err
 	}
 
 	task := models.Task{
-		Title:   request.Title,
-		Tickets: tickets,
-		OwnerID: userID,
-		Status:  models.StatusPending,
+		Title:              request.Title,
+		Tickets:            tickets,
+		OwnerID:            userID,
+		Status:             models.StatusPending,
+		EstimatedStartTime: startTime,
 	}
 
 	return u.ticketRepository.CreateTask(task)
@@ -133,31 +135,40 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) error {
+func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (time.Time, error) {
 	ticketsByPool, err := u.groupTicketsByPool(ticketIDs)
 	if err != nil {
-		return err
+		return time.Time{}, err
 	}
 
-	for poolID, poolTickets := range ticketsByPool {
-		log.Printf("[SEND TICKETS] sending request to pool %s, with %d tickets", poolID, len(poolTickets))
-	}
+	var startTime time.Time
 
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
 		url := poolURN + "/api/v1/ticket/createList"
 		response, err := httpclient.SendRequest(url, poolTickets, "POST")
+		// return c.Status(fiber.StatusOK).JSON(fiber.Map{"start_time": timeSlot})
+
+		var poolResponse struct {
+			StartTime time.Time `json:"start_time"`
+		}
+		if err := json.Unmarshal(response, &poolResponse); err != nil {
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
+		}
+
+		startTime = poolResponse.StartTime
+
 		if err != nil {
 			log.Println(string(response), err)
-			return apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
 		}
 	}
 
-	return nil
+	return startTime, nil
 }
 
 func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]dtos.TicketReq, error) {
@@ -171,6 +182,7 @@ func (u *TicketUsecase) groupTicketsByPool(ticketIDs []uuid.UUID) (map[string][]
 
 		poolID := ticketReq.Spec.PoolID.String()
 		ticketsByPool[poolID] = append(ticketsByPool[poolID], *ticketReq)
+
 	}
 
 	return ticketsByPool, nil
