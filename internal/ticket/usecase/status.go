@@ -117,32 +117,26 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 		anyFailed    bool
 		anyStopped   bool
 		anyPending   bool
+		anyRedeemed  bool
 		expiredCount int
-		allRedeemed  = true
 	)
 
 	for _, t := range tickets {
 		switch t.Status {
 		case models.StatusFailed:
 			anyFailed = true
-			allRedeemed = false
 
 		case models.StatusStopped:
 			anyStopped = true
-			allRedeemed = false
 
 		case models.StatusPending:
 			anyPending = true
-			allRedeemed = false
 
 		case models.StatusExpired:
 			expiredCount++
-			allRedeemed = false
 
 		case models.StatusRedeemed:
-			// still possibly all redeemed
-		default:
-			allRedeemed = false
+			anyRedeemed = true
 		}
 	}
 
@@ -150,18 +144,18 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 
 	var taskStatus models.StatusTicket
 
-	// Apply priority: all expired > any failed > any stopped > any pending > all redeemed
+	// Apply priority: any failed > any stopped > any pending > any redeemed (running) > all expired
 	switch {
-	case allExpired:
-		taskStatus = models.StatusExpired
 	case anyFailed:
 		taskStatus = models.StatusFailed
 	case anyStopped:
 		taskStatus = models.StatusStopped
 	case anyPending:
 		taskStatus = models.StatusPending
-	case allRedeemed:
+	case anyRedeemed:
 		taskStatus = models.StatusRedeemed
+	case allExpired:
+		taskStatus = models.StatusExpired
 	default:
 		taskStatus = models.StatusFailed
 	}
