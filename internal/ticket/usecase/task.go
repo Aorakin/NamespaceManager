@@ -168,6 +168,40 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (time.Time, error) {
 		}
 	}
 
+	type ConfirmTicketsRequest struct {
+		Tickets []uuid.UUID `json:"ticket_ids"`
+	}
+
+	for poolID, poolTickets := range ticketsByPool {
+		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
+		if err != nil {
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+		}
+
+		request := ConfirmTicketsRequest{
+			Tickets: []uuid.UUID{},
+		}
+		for _, t := range poolTickets {
+			request.Tickets = append(request.Tickets, t.ID)
+		}
+
+		url := poolURN + "/api/v1/ticket/confirmJobs"
+		response, err := httpclient.SendRequest(url, request, "PATCH")
+		if err != nil {
+			log.Println(string(response), err)
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get code server info from pool %s: %w", poolID, err))
+		}
+
+		var codeServerResponse dtos.CodeServerResponse
+		if err := json.Unmarshal(response, &codeServerResponse); err != nil {
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal code server response from pool %s: %w", poolID, err))
+		}
+
+		if err := u.updateTicketInfo(&codeServerResponse); err != nil {
+			return time.Time{}, err
+		}
+	}
+
 	return startTime, nil
 }
 
