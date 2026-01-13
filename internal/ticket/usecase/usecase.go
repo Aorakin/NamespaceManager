@@ -1,17 +1,11 @@
 package usecase
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
 	"github.com/NamespaceManager/internal/models"
 	namespaceInterfaces "github.com/NamespaceManager/internal/namespace/interfaces"
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	"github.com/NamespaceManager/internal/ticket/interfaces"
 	userInterfaces "github.com/NamespaceManager/internal/users/interfaces"
-	apiError "github.com/NamespaceManager/pkg/api_error"
-	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -72,77 +66,4 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 	}
 
 	return nil
-}
-
-func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
-	task, err := u.ticketRepository.GetTasksByID(taskID)
-	if err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get task by ID: %w", err))
-	}
-	if task.OwnerID != userID {
-		return nil, apiError.NewForbiddenError(fmt.Errorf("user does not own the task"))
-	}
-
-	// Group tickets by resource pool
-	type poolInfo struct {
-		ticketIDs  []uuid.UUID
-		defaultURL string
-	}
-	ticketsByPool := make(map[uuid.UUID]*poolInfo)
-
-	for _, ticket := range task.Tickets {
-		poolID := ticket.ResourcePoolID
-		if _, exists := ticketsByPool[poolID]; !exists {
-			ticketsByPool[poolID] = &poolInfo{
-				ticketIDs:  []uuid.UUID{},
-				defaultURL: ticket.GlideletURN,
-			}
-		}
-		ticketsByPool[poolID].ticketIDs = append(ticketsByPool[poolID].ticketIDs, ticket.GliderTicketID)
-	}
-
-	statusUpdates := make(map[uuid.UUID]models.StatusTicket)
-	var allResponses []dtos.StopTaskResponse
-
-	for poolID, info := range ticketsByPool {
-		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
-		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
-		}
-
-		payload := dtos.StopTaskTickets{TicketIDs: info.ticketIDs}
-		url := poolURL + "/api/v1/ticket/deletePods"
-
-		body, err := httpclient.SendRequest(url, payload, "POST")
-		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to stop tickets in pool %s: %w", poolID, err))
-		}
-
-		var response []dtos.StopTaskResponse
-		if err := json.Unmarshal(body, &response); err != nil {
-			return nil, apiError.NewBadRequestError(fmt.Errorf("failed to parse stop task response from pool %s: %w", poolID, err))
-		}
-
-		for _, res := range response {
-			ticketStatus := models.StatusFailed
-			if strings.ToLower(res.Status) == "deleted" {
-				ticketStatus = models.StatusStopped
-			}
-			statusUpdates[res.TicketID] = ticketStatus
-		}
-
-		allResponses = append(allResponses, response...)
-	}
-
-	if len(statusUpdates) > 0 {
-		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
-		}
-	}
-
-	if err := u.updateTaskStatus(taskID); err != nil {
-		return nil, err
-	}
-
-	return allResponses, nil
 }
