@@ -48,7 +48,12 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		}
 	}
 
-	startTime, err := u.sendTickets(request.Tickets)
+	ticketsByPool, err := u.groupTicketIDsByPool(ticketIDs)
+	if err != nil {
+		return err
+	}
+
+	startTime, err := u.sendTickets(ticketsByPool)
 	if err != nil {
 		return err
 	}
@@ -198,11 +203,7 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (time.Time, error) {
-	ticketsByPool, err := u.groupTicketIDsByPool(ticketIDs)
-	if err != nil {
-		return time.Time{}, err
-	}
+func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (time.Time, error) {
 
 	var startTime time.Time
 
@@ -231,41 +232,31 @@ func (u *TicketUsecase) sendTickets(ticketIDs []uuid.UUID) (time.Time, error) {
 		}
 	}
 
-	type ConfirmTicketsRequest struct {
-		Tickets []uuid.UUID `json:"ticket_ids"`
-	}
+	return startTime, nil
+}
 
+func (u *TicketUsecase) confirmStartTime(ticketsByPool map[string][]dtos.TicketReq) error {
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
-		request := ConfirmTicketsRequest{
-			Tickets: []uuid.UUID{},
+		request := dtos.StopTaskTickets{
+			TicketIDs: []uuid.UUID{},
 		}
 		for _, t := range poolTickets {
-			request.Tickets = append(request.Tickets, t.ID)
+			request.TicketIDs = append(request.TicketIDs, t.ID)
 		}
 
 		url := poolURN + "/api/v1/ticket/confirmJobs"
-		response, err := httpclient.SendRequest(url, request, "PATCH")
+		_, err = httpclient.SendRequest(url, request, "PATCH")
 		if err != nil {
-			log.Println(string(response), err)
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get code server info from pool %s: %w", poolID, err))
-		}
-
-		var codeServerResponse dtos.CodeServerResponse
-		if err := json.Unmarshal(response, &codeServerResponse); err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal code server response from pool %s: %w", poolID, err))
-		}
-
-		if err := u.updateTicketInfo(&codeServerResponse); err != nil {
-			return time.Time{}, err
+			return apiError.NewInternalServerError(fmt.Errorf("failed to get code server info from pool %s: %w", poolID, err))
 		}
 	}
 
-	return startTime, nil
+	return nil
 }
 
 func (u *TicketUsecase) groupTicketIDsByPool(ticketIDs []uuid.UUID) (map[string][]dtos.TicketReq, error) {
