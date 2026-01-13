@@ -150,6 +150,11 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		for ticketID, status := range updates {
+			// Skip expired tickets
+			if status == models.StatusExpired {
+				continue
+			}
+
 			result := tx.Model(&models.Ticket{}).
 				Where("glider_ticket_id = ?", ticketID).
 				Update("status", status)
