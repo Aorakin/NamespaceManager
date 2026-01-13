@@ -148,7 +148,7 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
-		url := poolURN + "/api/v1/ticket/stopPods"
+		url := poolURN + "/api/v1/ticket/deletePods"
 		payload := dtos.StopTaskTickets{TicketIDs: []uuid.UUID{}}
 		for _, t := range poolTickets {
 			payload.TicketIDs = append(payload.TicketIDs, t.GliderTicketID)
