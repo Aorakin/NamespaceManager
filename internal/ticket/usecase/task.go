@@ -48,12 +48,17 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		}
 	}
 
-	ticketsByPool, err := u.groupTicketIDsByPool(ticketIDs)
+	ticketsByPool, err := u.groupTicketIDsByPool(request.Tickets)
 	if err != nil {
 		return err
 	}
 
 	startTime, err := u.sendTickets(ticketsByPool)
+	if err != nil {
+		return err
+	}
+
+	err = u.confirmTickets(ticketsByPool)
 	if err != nil {
 		return err
 	}
@@ -235,7 +240,7 @@ func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (
 	return startTime, nil
 }
 
-func (u *TicketUsecase) confirmStartTime(ticketsByPool map[string][]dtos.TicketReq) error {
+func (u *TicketUsecase) confirmTickets(ticketsByPool map[string][]dtos.TicketReq) error {
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
