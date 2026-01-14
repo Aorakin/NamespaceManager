@@ -150,8 +150,14 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		for ticketID, status := range updates {
-			// Skip expired tickets
-			if status == models.StatusExpired {
+			// Check if the ticket's current status is expired
+			var ticket models.Ticket
+			if err := tx.Where("glider_ticket_id = ?", ticketID).First(&ticket).Error; err != nil {
+				return fmt.Errorf("failed to fetch ticket %s: %w", ticketID, err)
+			}
+
+			// Skip update if current status is expired
+			if ticket.Status == models.StatusExpired {
 				continue
 			}
 
