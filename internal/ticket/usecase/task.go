@@ -201,7 +201,8 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResponse) error {
 	for _, res := range codeServerResponse.TicketResponse {
 		if err := u.ticketRepository.UpdateCodeServerInfo(res.TicketID, res.URL, res.Password); err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to update ticket info: %w", err))
+			log.Printf("[UPDATE TICKET INFO] failed to update ticket %s: %v", res.TicketID, err)
+			continue
 		}
 	}
 
