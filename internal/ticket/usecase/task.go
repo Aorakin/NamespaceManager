@@ -209,7 +209,7 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 }
 
 func (u *TicketUsecase) getNextQueueTime() (time.Time, error) {
-	return time.Now().Add(10 * time.Minute), nil
+	return time.Now().Add(24 * 365 * time.Hour), nil
 }
 
 func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (time.Time, error) {
