@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"time"
 
@@ -153,7 +154,8 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 			// Check if the ticket's current status is expired
 			var ticket models.Ticket
 			if err := tx.Where("glider_ticket_id = ?", ticketID).First(&ticket).Error; err != nil {
-				return fmt.Errorf("failed to fetch ticket %s: %w", ticketID, err)
+				log.Printf("[BATCH UPDATE TICKET STATUS] failed to fetch ticket %s: %v", ticketID, err)
+				continue
 			}
 
 			// Skip update if current status is expired
@@ -166,7 +168,8 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 				Update("status", status)
 
 			if result.Error != nil {
-				return fmt.Errorf("failed to update ticket %s: %w", ticketID, result.Error)
+				log.Printf("[BATCH UPDATE TICKET STATUS] failed to update ticket %s: %v", ticketID, result.Error)
+				continue
 			}
 		}
 		return nil
