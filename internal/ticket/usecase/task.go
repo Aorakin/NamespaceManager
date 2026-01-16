@@ -208,9 +208,20 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (time.Time, error) {
+func (u *TicketUsecase) getNextQueueTime() (time.Time, error) {
+	return time.Now().Add(10 * time.Minute), nil
+}
 
+func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (time.Time, error) {
 	var startTime time.Time
+	type QueuePayload struct {
+		Tickets []dtos.TicketReq `json:"tickets"`
+		EndTime time.Time        `json:"end_time"`
+	}
+	endTime, err := u.getNextQueueTime()
+	if err != nil {
+		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time: %w", err))
+	}
 
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
@@ -219,12 +230,16 @@ func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (
 		}
 
 		url := poolURN + "/api/v1/ticket/createList"
-		response, err := httpclient.SendRequest(url, poolTickets, "POST")
-		// return c.Status(fiber.StatusOK).JSON(fiber.Map{"start_time": timeSlot})
+		payload := QueuePayload{
+			Tickets: poolTickets,
+			EndTime: endTime,
+		}
+		response, err := httpclient.SendRequest(url, payload, "POST")
 
 		var poolResponse struct {
 			StartTime time.Time `json:"start_time"`
 		}
+
 		if err := json.Unmarshal(response, &poolResponse); err != nil {
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
 		}
