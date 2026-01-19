@@ -13,7 +13,7 @@ import (
 
 // Client is a wrapper around http.Client with default timeout
 var Client = &http.Client{
-	Timeout: 10 * time.Second,
+	Timeout: 30 * time.Second,
 }
 
 // SendRequest sends an HTTP request without authentication
