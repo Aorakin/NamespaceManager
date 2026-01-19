@@ -54,6 +54,7 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 	}
 
 	startTime, err := u.EnqueueTask(ticketsByPool)
+	log.Printf("[CREATE TASK] EnqueueTask returned with error: %s", err.Error())
 	log.Printf("[CREATE TASK] EnqueueTask returned startTime: %v", startTime)
 	if err != nil {
 		return err
