@@ -79,6 +79,7 @@ const (
 	StatusStopped   StatusTicket = "stopped"
 	StatusExpired   StatusTicket = "expired"
 	StatusFailed    StatusTicket = "failed"
+	StatusQueued    StatusTicket = "queued"
 )
 
 var UneditableStatus = []StatusTicket{StatusCancelled, StatusStopped, StatusExpired, StatusFailed}

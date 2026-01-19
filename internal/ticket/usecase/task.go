@@ -53,21 +53,27 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		return err
 	}
 
-	startTime, err := u.sendTickets(ticketsByPool)
+	startTime, err := u.EnqueueTask(ticketsByPool)
 	if err != nil {
 		return err
 	}
+	status := models.StatusQueued
 
-	err = u.confirmTickets(ticketsByPool)
-	if err != nil {
-		return err
+	if startTime.IsZero() {
+		startTime = time.Now()
+	} else {
+		err = u.confirmTickets(ticketsByPool)
+		if err != nil {
+			return err
+		}
+		status = models.StatusPending
 	}
 
 	task := models.Task{
 		Title:              request.Title,
 		Tickets:            tickets,
 		OwnerID:            userID,
-		Status:             models.StatusPending,
+		Status:             status,
 		EstimatedStartTime: startTime,
 	}
 
@@ -209,56 +215,50 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	return nil
 }
 
-func (u *TicketUsecase) getNextQueueTime() (time.Time, error) {
-	return time.Now().Add(24 * 365 * time.Hour), nil
-}
-
-func (u *TicketUsecase) sendTickets(ticketsByPool map[string][]dtos.TicketReq) (time.Time, error) {
+func (u *TicketUsecase) sendTickets(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	var startTime time.Time
-	type QueuePayload struct {
-		Tickets []dtos.TicketReq `json:"tickets"`
-		EndTime time.Time        `json:"end_time"`
-	}
-	endTime, err := u.getNextQueueTime()
-	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time: %w", err))
-	}
 
-	for poolID, poolTickets := range ticketsByPool {
-		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
-		if err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
-		}
+	// endTime, err := u.getNextQueueTime()
+	// if err != nil {
+	// 	return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time: %w", err))
+	// }
 
-		url := poolURN + "/api/v1/ticket/createList"
-		payload := QueuePayload{
-			Tickets: poolTickets,
-			EndTime: endTime,
-		}
-		response, err := httpclient.SendRequest(url, payload, "POST")
+	// for poolID, poolTickets := range ticketsByPool {
+	// 	poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
+	// 	if err != nil {
+	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+	// 	}
 
-		var poolResponse struct {
-			StartTime time.Time `json:"start_time"`
-		}
+	// 	url := poolURN + "/api/v1/ticket/createList"
+	// 	payload := dtos.QueuePayload{
+	// 		Tickets: poolTickets,
+	// 		EndTime: endTime,
+	// 	}
 
-		if err := json.Unmarshal(response, &poolResponse); err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
-		}
+	// 	response, err := httpclient.SendRequest(url, payload, "POST")
 
-		startTime = poolResponse.StartTime
+	// 	var poolResponse struct {
+	// 		StartTime time.Time `json:"start_time"`
+	// 	}
 
-		if err != nil {
-			log.Println(string(response), err)
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
-		}
-	}
+	// 	if err := json.Unmarshal(response, &poolResponse); err != nil {
+	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
+	// 	}
+
+	// 	startTime = poolResponse.StartTime
+
+	// 	if err != nil {
+	// 		log.Println(string(response), err)
+	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
+	// 	}
+	// }
 
 	return startTime, nil
 }
 
-func (u *TicketUsecase) confirmTickets(ticketsByPool map[string][]dtos.TicketReq) error {
+func (u *TicketUsecase) confirmTickets(ticketsByPool map[uuid.UUID][]dtos.TicketReq) error {
 	for poolID, poolTickets := range ticketsByPool {
-		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
+		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
 		if err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
@@ -280,8 +280,8 @@ func (u *TicketUsecase) confirmTickets(ticketsByPool map[string][]dtos.TicketReq
 	return nil
 }
 
-func (u *TicketUsecase) groupTicketIDsByPool(ticketIDs []uuid.UUID) (map[string][]dtos.TicketReq, error) {
-	ticketsByPool := make(map[string][]dtos.TicketReq)
+func (u *TicketUsecase) groupTicketIDsByPool(ticketIDs []uuid.UUID) (map[uuid.UUID][]dtos.TicketReq, error) {
+	ticketsByPool := make(map[uuid.UUID][]dtos.TicketReq)
 
 	for _, gliderTicketID := range ticketIDs {
 		ticketReq, err := u.toTicketRequest(gliderTicketID)
@@ -289,7 +289,7 @@ func (u *TicketUsecase) groupTicketIDsByPool(ticketIDs []uuid.UUID) (map[string]
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to convert ticket to ticket request: %w", err))
 		}
 
-		poolID := ticketReq.Spec.PoolID.String()
+		poolID := ticketReq.Spec.PoolID
 		ticketsByPool[poolID] = append(ticketsByPool[poolID], *ticketReq)
 
 	}
