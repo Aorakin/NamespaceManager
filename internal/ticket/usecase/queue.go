@@ -31,8 +31,8 @@ func (u *TicketUsecase) getNextQueueTime(poolID uuid.UUID, NodeNames []string) (
 func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	startTime, err := u.negotiateStartTime(ticketsByPool)
 	log.Printf("[ENQUEUE TASK] Negotiated start time: %s", startTime.String())
-	log.Printf("[ENQUEUE TASK] Negotiated return with ERROR : %s", err.Error())
 	if err != nil {
+		log.Printf("[ENQUEUE TASK] Negotiated return with ERROR : %s", err.Error())
 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: %s", err.Error()))
 	}
 
@@ -88,8 +88,9 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 		}
 
 		nextQueueTime, err := u.getNextQueueTime(poolID, u.getNodeNames(poolTickets))
-		log.Printf("[NEGOTIATE START TIME] next queue error: %s", err.Error())
+
 		if err != nil {
+			log.Printf("[NEGOTIATE START TIME] Next Queue Error")
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time for pool %s: %w", poolID, err))
 		}
 
@@ -103,10 +104,11 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 		}
 
 		response, err := httpclient.SendRequest(url, payload, "POST")
-		log.Printf("[NEGOTIATE START TIME] PoolID: %s, Response: %s, Error: %v", poolID, string(response), err.Error())
 		if err != nil {
+			log.Printf("[NEGOTIATE START TIME] PoolID: %s, Error: %v", poolID, err.Error())
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %s", poolID, err.Error()))
 		}
+		log.Printf("[NEGOTIATE START TIME] PoolID: %s, Response: %s", poolID, string(response))
 
 		var poolResponse dtos.PoolQueueResponse
 		if err := json.Unmarshal(response, &poolResponse); err != nil {
