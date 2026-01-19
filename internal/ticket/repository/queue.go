@@ -10,7 +10,7 @@ import (
 
 func (r *TicketRepository) GetNextStartTimeByPoolID(poolID uuid.UUID) (time.Time, error) {
 	var queueTicket models.QueueTicket
-	err := r.db.Where("pool_id = ? && start_time >= ?", poolID, time.Now()).Order("start_time desc").First(&queueTicket).Error
+	err := r.db.Where("pool_id = ? AND start_time >= ?", poolID, time.Now()).Order("start_time desc").First(&queueTicket).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return time.Time{}, nil
