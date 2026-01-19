@@ -31,8 +31,9 @@ func (u *TicketUsecase) getNextQueueTime(poolID uuid.UUID, NodeNames []string) (
 func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	startTime, err := u.negotiateStartTime(ticketsByPool)
 	log.Printf("[ENQUEUE TASK] Negotiated start time: %s", startTime.String())
+	log.Printf("[ENQUEUE TASK] Negotiated return with ERROR : %s", err.Error())
 	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: %w", err))
+		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: %s", err.Error()))
 	}
 
 	if startTime.IsZero() {
@@ -41,7 +42,7 @@ func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 
 	err = u.insertQueue(ticketsByPool, startTime)
 	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to insert tickets into queue: %w", err))
+		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to insert tickets into queue: %s", err.Error()))
 	}
 
 	log.Printf("[ENQUEUE TASK] Insert queue to database, total pool: %d, start time %s", len(ticketsByPool), startTime.String())
@@ -81,11 +82,13 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
+		log.Printf("[NEGOTIATE START TIME] PoolID: %s, PoolURN: %s", poolID, poolURN)
 		if err != nil {
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
 		nextQueueTime, err := u.getNextQueueTime(poolID, u.getNodeNames(poolTickets))
+		log.Printf("[NEGOTIATE START TIME] next queue error: %s", err.Error())
 		if err != nil {
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time for pool %s: %w", poolID, err))
 		}
@@ -100,19 +103,18 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 		}
 
 		response, err := httpclient.SendRequest(url, payload, "POST")
+		log.Printf("[NEGOTIATE START TIME] PoolID: %s, Response: %s, Error: %v", poolID, string(response), err.Error())
+		if err != nil {
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %s", poolID, err.Error()))
+		}
+
 		var poolResponse dtos.PoolQueueResponse
 		if err := json.Unmarshal(response, &poolResponse); err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %s", poolID, err.Error()))
 		}
-
+		log.Println(string(response), err)
 		startTime = poolResponse.StartTime
-
-		if err != nil {
-			log.Println(string(response), err)
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
-		}
 	}
-
 	return startTime, nil
 }
 
