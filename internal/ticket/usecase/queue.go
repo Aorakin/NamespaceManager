@@ -15,8 +15,8 @@ import (
 
 // getNextQueueTime retrieves the estimated start time of the next task in the queue.
 // If there are no tasks in the queue, it returns a time far in the future.
-func (u *TicketUsecase) getNextQueueTime(poolID uuid.UUID) (time.Time, error) {
-	startTime, err := u.ticketRepository.GetNextStartTimeByPoolID(poolID)
+func (u *TicketUsecase) getNextQueueTime(poolID uuid.UUID, NodeNames []string) (time.Time, error) {
+	startTime, err := u.ticketRepository.GetNextStartTime(poolID, NodeNames)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("failed to get next queue task: %w", err)
 	}
@@ -61,6 +61,7 @@ func (u *TicketUsecase) insertQueue(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 			queueTicket := models.QueueTicket{
 				GliderTicketID: ticket.ID,
 				PoolID:         poolID,
+				NodeName:       ticket.NodeName,
 				StartTime:      startTime,
 			}
 
@@ -73,6 +74,14 @@ func (u *TicketUsecase) insertQueue(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 	return nil
 }
 
+func (u *TicketUsecase) getNodeNames(tickets []dtos.TicketReq) []string {
+	var nodeNames []string
+	for _, ticket := range tickets {
+		nodeNames = append(nodeNames, ticket.NodeName)
+	}
+	return nodeNames
+}
+
 func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	var startTime time.Time
 
@@ -82,10 +91,13 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
 		}
 
-		nextQueueTime, err := u.getNextQueueTime(poolID)
+		nextQueueTime, err := u.getNextQueueTime(poolID, u.getNodeNames(poolTickets))
 		if err != nil {
 			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time for pool %s: %w", poolID, err))
 		}
+
+		log.Printf("[NEGOTIATE START TIME] PoolID: %s with nodes %#v", poolID, u.getNodeNames(poolTickets))
+		log.Printf("[NEGOTIATE START TIME] PoolID: %s, NextQueueTime: %s", poolID, nextQueueTime.String())
 
 		url := poolURN + "/api/v1/ticket/createList"
 		payload := dtos.QueuePayload{

@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *TicketRepository) GetNextStartTimeByPoolID(poolID uuid.UUID) (time.Time, error) {
+func (r *TicketRepository) GetNextStartTime(poolID uuid.UUID, NodeNames []string) (time.Time, error) {
 	var queueTicket models.QueueTicket
-	err := r.db.Where("pool_id = ? AND start_time >= ?", poolID, time.Now()).Order("start_time desc").First(&queueTicket).Error
+	err := r.db.Where("pool_id = ? AND start_time >= ? AND node_name IN ?", poolID, time.Now(), NodeNames).Order("start_time desc").First(&queueTicket).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return time.Time{}, nil
