@@ -54,14 +54,17 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 	}
 
 	startTime, err := u.EnqueueTask(ticketsByPool)
+	log.Printf("[CREATE TASK] EnqueueTask returned startTime: %v", startTime)
 	if err != nil {
 		return err
 	}
 	status := models.StatusQueued
 
 	if startTime.IsZero() {
+		log.Printf("[CREATE TASK] Start time is ZERO")
 		startTime = time.Now()
 	} else {
+		log.Printf("[CREATE TASK] Start time is scheduled at %v", startTime)
 		err = u.confirmTickets(ticketsByPool)
 		if err != nil {
 			return err
