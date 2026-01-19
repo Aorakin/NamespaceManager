@@ -39,12 +39,6 @@ func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 		return time.Time{}, nil
 	}
 
-	err = u.confirmTickets(ticketsByPool)
-	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to confirm tickets: %w", err))
-	}
-	log.Printf("[ENQUEUE TASK] Confirm ticket successfully")
-
 	err = u.insertQueue(ticketsByPool, startTime)
 	if err != nil {
 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to insert tickets into queue: %w", err))
