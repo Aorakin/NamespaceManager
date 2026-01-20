@@ -21,9 +21,44 @@ func (r *TicketRepository) GetNextStartTime(poolID uuid.UUID, NodeNames []string
 	return queueTicket.StartTime, nil
 }
 
+func (r *TicketRepository) GetHeadTask() (*models.Task, error) {
+	var task models.Task
+	if err := r.db.Preload("Tickets").Where("status = ? AND estimated_start_time IS NOT NULL", models.StatusQueued).Order("estimated_start_time asc").First(&task).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &task, nil
+}
+
 func (r *TicketRepository) CreateQueueTicket(queueTicket models.QueueTicket) error {
 	if err := r.db.Create(&queueTicket).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+// GetHeadTasksByPoolAndNodes returns the earliest queued ticket for each node in the pool
+func (r *TicketRepository) GetHeadTasksByPoolAndNodes(poolID uuid.UUID, nodeNames []string) (map[string]*models.QueueTicket, error) {
+	result := make(map[string]*models.QueueTicket)
+
+	for _, nodeName := range nodeNames {
+		var queueTicket models.QueueTicket
+		err := r.db.Where("pool_id = ? AND node_name = ? AND start_time >= ?", poolID, nodeName, time.Now()).
+			Order("start_time asc").
+			First(&queueTicket).Error
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				// This node has no head task
+				result[nodeName] = nil
+				continue
+			}
+			return nil, err
+		}
+		result[nodeName] = &queueTicket
+	}
+
+	return result, nil
 }

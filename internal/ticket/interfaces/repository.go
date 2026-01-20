@@ -34,4 +34,6 @@ type TicketRepository interface {
 	// queue
 	GetNextStartTime(poolID uuid.UUID, nodeNames []string) (time.Time, error)
 	CreateQueueTicket(queueTicket models.QueueTicket) error
+	GetHeadTask() (*models.Task, error)
+	GetHeadTasksByPoolAndNodes(poolID uuid.UUID, nodeNames []string) (map[string]*models.QueueTicket, error)
 }
