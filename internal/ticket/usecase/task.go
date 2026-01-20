@@ -138,14 +138,14 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 		}
 	}
 
-	err = u.ticketRepository.DeleteTask(taskID)
-	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to delete task: %w", err))
-	}
-
 	err = u.ticketRepository.DeleteQueue(taskID)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to delete queue: %w", err))
+	}
+
+	err = u.ticketRepository.DeleteTask(taskID)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to delete task: %w", err))
 	}
 
 	return nil
