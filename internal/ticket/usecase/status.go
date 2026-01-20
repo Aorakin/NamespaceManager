@@ -43,7 +43,6 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		ticketUpdates[statusRes.TicketID] = finalStatus
 	}
 
-	// Step 2: Batch update all ticket statuses in one transaction
 	if err := u.ticketRepository.BatchUpdateTicketStatuses(ticketUpdates); err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
 	}
@@ -52,13 +51,11 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		return err
 	}
 
-	// Step 3: Get all affected tickets with their task IDs in ONE query
 	tickets, err := u.ticketRepository.GetTicketsByGliderTicketIDs(ticketIDs)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
 	}
 
-	// Step 4: Collect unique task IDs
 	taskIDsMap := make(map[uuid.UUID]struct{})
 	for _, ticket := range tickets {
 		if ticket.TaskID != nil {
@@ -66,12 +63,23 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		}
 	}
 
-	// Step 5: Update all affected tasks
 	for taskID := range taskIDsMap {
 		if err := u.updateTaskStatus(taskID); err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to update task status for task %s: %v", taskID, err))
 		}
 	}
+
+	nodeNamesSet := make(map[string]struct{})
+	for _, ticket := range tickets {
+		nodeNamesSet[ticket.GliderTicket.NodeName] = struct{}{}
+	}
+
+	nodeNames := make([]string, 0, len(tickets))
+	for nodeName := range nodeNamesSet {
+		nodeNames = append(nodeNames, nodeName)
+	}
+
+	u.requeue(nodeNames)
 
 	return nil
 }

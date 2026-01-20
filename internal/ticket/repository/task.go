@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/NamespaceManager/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -64,6 +66,32 @@ func (r *TicketRepository) DeleteTask(taskID uuid.UUID) error {
 	result := r.db.Delete(&models.Task{}, "id = ?", taskID)
 	if result.Error != nil {
 		return result.Error
+	}
+	return nil
+}
+
+func (r *TicketRepository) GetTasksByNodeNames(nodeNames []string) ([]models.Task, error) {
+	var tasks []models.Task
+	err := r.db.
+		Model(&models.Task{}).
+		Preload("Tickets").
+		Joins("JOIN tickets ON tickets.task_id = tasks.id").
+		Where("tasks.status = ?", models.StatusQueued).
+		Where("tickets.task_id IS NOT NULL").
+		Where("tickets.glider_ticket->>'node_name' IN ?", nodeNames).
+		Order("created_at asc").
+		Find(&tasks).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (r *TicketRepository) UpdateTaskQueueInfo(taskID uuid.UUID, startTime time.Time, status models.StatusTicket) error {
+	if err := r.db.Model(&models.Task{}).Where("id = ?", taskID).Updates(models.Task{EstimatedStartTime: startTime, Status: status}).Error; err != nil {
+		return err
 	}
 	return nil
 }

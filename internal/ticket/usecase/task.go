@@ -61,16 +61,21 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 	}
 	status := models.StatusQueued
 
-	if startTime.IsZero() {
-		log.Printf("[CREATE TASK] Start time is ZERO")
-		startTime = time.Now()
-	} else {
-		log.Printf("[CREATE TASK] Start time is scheduled at %v", startTime)
+	if !startTime.IsZero() {
+		status = models.StatusPending
+		// If start time is more than 1 minute in the future, it's queued
+		if time.Until(startTime) > time.Minute {
+			status = models.StatusQueued
+		}
+
+		log.Printf("[CREATE TASK] Start time is scheduled at %v, status: %s", startTime, status)
 		err = u.confirmTickets(ticketsByPool)
 		if err != nil {
 			return err
 		}
-		status = models.StatusPending
+
+	} else {
+		log.Printf("[CREATE TASK] Start time is ZERO")
 	}
 
 	task := models.Task{
@@ -148,6 +153,8 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to delete task: %w", err))
 	}
 
+	u.requeue(u.getNodeNamesByTickets(task.Tickets))
+
 	return nil
 }
 
@@ -210,6 +217,8 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 		return nil, err
 	}
 
+	u.requeue(u.getNodeNamesByTickets(task.Tickets))
+
 	return allResponses, nil
 }
 
@@ -222,47 +231,6 @@ func (u *TicketUsecase) updateTicketInfo(codeServerResponse *dtos.CodeServerResp
 	}
 
 	return nil
-}
-
-func (u *TicketUsecase) sendTickets(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
-	var startTime time.Time
-
-	// endTime, err := u.getNextQueueTime()
-	// if err != nil {
-	// 	return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get next queue time: %w", err))
-	// }
-
-	// for poolID, poolTickets := range ticketsByPool {
-	// 	poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
-	// 	if err != nil {
-	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
-	// 	}
-
-	// 	url := poolURN + "/api/v1/ticket/createList"
-	// 	payload := dtos.QueuePayload{
-	// 		Tickets: poolTickets,
-	// 		EndTime: endTime,
-	// 	}
-
-	// 	response, err := httpclient.SendRequest(url, payload, "POST")
-
-	// 	var poolResponse struct {
-	// 		StartTime time.Time `json:"start_time"`
-	// 	}
-
-	// 	if err := json.Unmarshal(response, &poolResponse); err != nil {
-	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal response from pool %s: %w", poolID, err))
-	// 	}
-
-	// 	startTime = poolResponse.StartTime
-
-	// 	if err != nil {
-	// 		log.Println(string(response), err)
-	// 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to send tickets to pool %s: %w", poolID, err))
-	// 	}
-	// }
-
-	return startTime, nil
 }
 
 func (u *TicketUsecase) confirmTickets(ticketsByPool map[uuid.UUID][]dtos.TicketReq) error {

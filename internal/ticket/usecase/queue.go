@@ -13,22 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// getNextQueueTime retrieves the estimated start time of the next task in the queue.
-// If there are no tasks in the queue, it returns a time far in the future.
-func (u *TicketUsecase) getNextQueueTime(poolID uuid.UUID, NodeNames []string) (time.Time, error) {
-	return time.Now().Add(365 * 24 * time.Hour), nil // Default to far future
-	// startTime, err := u.ticketRepository.GetNextStartTime(poolID, NodeNames)
-	// if err != nil {
-	// 	return time.Time{}, fmt.Errorf("failed to get next queue task: %w", err)
-	// }
-	// if startTime.IsZero() {
-	// 	// No tasks in the queue, return a time far in the future
-	// 	return time.Now().Add(365 * 24 * time.Hour), nil
-	// }
-
-	// return startTime, nil
-}
-
 func (u *TicketUsecase) allNodesHaveHeadTasks(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (bool, error) {
 	for poolID, poolTickets := range ticketsByPool {
 		nodeNames := u.getNodeNames(poolTickets)
@@ -353,13 +337,52 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 	return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time after %d iterations", maxIterations))
 }
 
-// func (u *TicketUsecase) TryQueueTask() {
-// 	tasks, err := u.ticketRepository.GetQueuedTasks()
-// 	if err != nil {
-// 		return
-// 	}
+// requeue handles re-enqueuing tasks associated with a specific node name.
+// when resource on a node is finished or stopped, this function is called,
+// it will attempt to re-enqueue all queued tasks that were waiting for that node for a chance to start earlier.
+func (u *TicketUsecase) requeue(nodeNames []string) error {
+	queuedTasks, err := u.ticketRepository.GetTasksByNodeNames(nodeNames)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to get tasks by node name: %w", err))
+	}
+	log.Printf("[REQUEUE] Found %d tasks for node %s", len(queuedTasks), nodeNames)
 
-// 	if len(tasks) == 0 {
-// 		return
-// 	}
-// }
+	for _, task := range queuedTasks {
+		u.ticketRepository.DeleteQueue(task.ID)
+	}
+	log.Printf("[REQUEUE] Deleted queue entries for node %s", nodeNames)
+
+	for _, task := range queuedTasks {
+		ticketsByPool, _ := u.getFormattedTickets(task.Tickets)
+		startTime, err := u.EnqueueTask(ticketsByPool)
+		if err != nil {
+			log.Printf("[REQUEUE] Failed to re-enqueue task %s: %v", task.ID, err)
+			continue
+		}
+		log.Printf("[REQUEUE] Successfully re-enqueued task %s", task.ID)
+
+		status := models.StatusQueued
+		if !startTime.IsZero() {
+			status = models.StatusPending
+			if time.Until(startTime) > time.Minute {
+				status = models.StatusQueued
+			}
+
+			log.Printf("[REQUEUE] Start time is scheduled at %v, status: %s", startTime, status)
+			err = u.confirmTickets(ticketsByPool)
+			if err != nil {
+				log.Printf("[REQUEUE] Failed to confirm tickets for task %s: %v", task.ID, err)
+				continue
+			}
+
+		}
+		err = u.ticketRepository.UpdateTaskQueueInfo(task.ID, startTime, status)
+		if err != nil {
+			log.Printf("[REQUEUE] Failed to update task %s queue info: %v", task.ID, err)
+			continue
+		}
+		log.Printf("[REQUEUE] Updated task %s queue info with start time %s and status %s", task.ID, startTime, status)
+	}
+
+	return nil
+}

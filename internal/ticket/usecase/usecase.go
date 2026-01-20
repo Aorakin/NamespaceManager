@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"strconv"
+
 	"github.com/NamespaceManager/internal/models"
 	namespaceInterfaces "github.com/NamespaceManager/internal/namespace/interfaces"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -66,4 +68,56 @@ func (u *TicketUsecase) SaveTicket(ticketRes dtos.GliderTicketResponse, name str
 	}
 
 	return nil
+}
+
+func (u *TicketUsecase) getFormattedTickets(tickets []models.Ticket) (map[uuid.UUID][]dtos.TicketReq, error) {
+	ticketsByPool := make(map[uuid.UUID][]dtos.TicketReq)
+	for _, ticket := range tickets {
+		poolID := ticket.ResourcePoolID
+		ticketReq := dtos.TicketReq{
+			GlideletURN:  ticket.GlideletURN,
+			ID:           ticket.GliderTicket.ID,
+			Lease:        strconv.FormatUint(uint64(ticket.GliderTicket.Lease), 10),
+			NamespaceURN: ticket.GliderTicket.NamespaceID.String(),
+			Signature:    ticket.Signature,
+			Spec:         u.formatGliderSpec(ticket),
+			NodeName:     ticket.GliderTicket.NodeName,
+		}
+
+		ticketsByPool[poolID] = append(ticketsByPool[poolID], ticketReq)
+	}
+
+	return ticketsByPool, nil
+}
+
+func (u *TicketUsecase) formatGliderSpec(ticket models.Ticket) dtos.GliderSpec {
+	return dtos.GliderSpec{
+		Type:   dtos.ResourceUnitType(ticket.GliderTicket.Spec.Type),
+		PoolID: ticket.ResourcePoolID,
+		Resources: func() []dtos.SpecResource {
+			var resources []dtos.SpecResource
+			for _, r := range ticket.GliderTicket.Spec.Resources {
+				resources = append(resources, dtos.SpecResource{
+					Name:     r.Name,
+					Quantity: int64(r.Quantity),
+					Unit:     r.Unit,
+				})
+			}
+			return resources
+		}(),
+	}
+}
+
+func (u *TicketUsecase) getNodeNamesByTickets(tickets []models.Ticket) []string {
+	nodeNameSet := make(map[string]struct{})
+	for _, ticket := range tickets {
+		nodeNameSet[ticket.GliderTicket.NodeName] = struct{}{}
+	}
+
+	nodeNames := make([]string, 0, len(nodeNameSet))
+	for nodeName := range nodeNameSet {
+		nodeNames = append(nodeNames, nodeName)
+	}
+
+	return nodeNames
 }
