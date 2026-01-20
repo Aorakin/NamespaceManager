@@ -71,10 +71,12 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 
 	nodeNamesSet := make(map[string]struct{})
 	for _, ticket := range tickets {
-		nodeNamesSet[ticket.GliderTicket.NodeName] = struct{}{}
+		if ticket.Status == models.StatusExpired || ticket.Status == models.StatusFailed {
+			nodeNamesSet[ticket.GliderTicket.NodeName] = struct{}{}
+		}
 	}
 
-	nodeNames := make([]string, 0, len(tickets))
+	nodeNames := make([]string, 0, len(nodeNamesSet))
 	for nodeName := range nodeNamesSet {
 		nodeNames = append(nodeNames, nodeName)
 	}
