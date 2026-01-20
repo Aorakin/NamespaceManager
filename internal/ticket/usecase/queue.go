@@ -347,13 +347,20 @@ func (u *TicketUsecase) requeue(nodeNames []string) error {
 	}
 	log.Printf("[REQUEUE] Found %d tasks for node %s", len(queuedTasks), nodeNames)
 
+	formattedTickets := make(map[uuid.UUID]map[uuid.UUID][]dtos.TicketReq)
 	for _, task := range queuedTasks {
-		u.ticketRepository.DeleteQueue(task.ID)
+		ticketsByPool, _ := u.getFormattedTickets(task.Tickets)
+		formattedTickets[task.ID] = ticketsByPool
+	}
+
+	for _, task := range queuedTasks {
+		ticketsByPool := formattedTickets[task.ID]
+		u.fallBackQueueTask(ticketsByPool)
 	}
 	log.Printf("[REQUEUE] Deleted queue entries for node %s", nodeNames)
 
 	for _, task := range queuedTasks {
-		ticketsByPool, _ := u.getFormattedTickets(task.Tickets)
+		ticketsByPool := formattedTickets[task.ID]
 		startTime, err := u.EnqueueTask(ticketsByPool)
 		if err != nil {
 			log.Printf("[REQUEUE] Failed to re-enqueue task %s: %v", task.ID, err)
