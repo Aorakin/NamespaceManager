@@ -356,6 +356,7 @@ func (u *TicketUsecase) requeue(nodeNames []string) error {
 	for _, task := range queuedTasks {
 		ticketsByPool := formattedTickets[task.ID]
 		u.fallBackQueueTask(ticketsByPool)
+		u.ticketRepository.DeleteQueue(task.ID)
 	}
 	log.Printf("[REQUEUE] Deleted queue entries for node %s", nodeNames)
 
