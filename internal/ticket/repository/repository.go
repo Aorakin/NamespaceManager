@@ -141,17 +141,3 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 		return nil
 	})
 }
-
-func (r *TicketRepository) DeleteTask(taskID uuid.UUID) error {
-	// First, set TaskID to NULL for all tickets associated with this task
-	if err := r.db.Model(&models.Ticket{}).Where("task_id = ?", taskID).Update("task_id", nil).Error; err != nil {
-		return err
-	}
-
-	// Then delete the task
-	result := r.db.Delete(&models.Task{}, "id = ?", taskID)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}

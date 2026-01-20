@@ -46,8 +46,20 @@ func (u *TicketUsecase) allNodesHaveHeadTasks(ticketsByPool map[uuid.UUID][]dtos
 	return true, nil
 }
 
-func (u *TicketUsecase) tryBackFillTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
+func (u *TicketUsecase) backfillTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
+	startTime, err := u.tryBackfillTask(ticketsByPool)
+	log.Printf("[ENQUEUE TASK] Negotiated start time: %s", startTime.String())
+	err = u.confirmTickets(ticketsByPool)
+	if err != nil {
+		log.Printf("[ENQUEUE TASK] Confirm tickets return with ERROR : %s", err.Error())
+		// return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to confirm tickets: %s", err.Error()))
+	}
+	return startTime, nil
+}
+
+func (u *TicketUsecase) tryBackfillTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	backfillSuccess := true
+	startTime := time.Now()
 
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
@@ -59,7 +71,7 @@ func (u *TicketUsecase) tryBackFillTask(ticketsByPool map[uuid.UUID][]dtos.Ticke
 		url := poolURN + "/api/v1/ticket/backFillJobs"
 		payload := dtos.QueuePayload{
 			Tickets:   poolTickets,
-			StartTime: time.Now(),
+			StartTime: startTime,
 		}
 
 		response, err := httpclient.SendRequest(url, payload, "POST")
@@ -93,7 +105,7 @@ func (u *TicketUsecase) tryBackFillTask(ticketsByPool map[uuid.UUID][]dtos.Ticke
 	}
 
 	log.Printf("[BACKFILL TASK] Backfill successful for all pools")
-	return time.Time{}, nil
+	return startTime, nil
 }
 
 func (u *TicketUsecase) fallBackQueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) error {
@@ -187,7 +199,7 @@ func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 		return u.queueHeadTask(ticketsByPool)
 	}
 
-	return u.tryBackFillTask(ticketsByPool)
+	return u.backfillTask(ticketsByPool)
 
 }
 
