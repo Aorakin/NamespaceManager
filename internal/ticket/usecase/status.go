@@ -79,7 +79,7 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		nodeNames = append(nodeNames, nodeName)
 	}
 
-	// u.requeue(nodeNames)
+	u.requeue(nodeNames)
 
 	return nil
 }
