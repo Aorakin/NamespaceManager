@@ -178,6 +178,7 @@ func (u *TicketUsecase) queueHeadTask(ticketsByPool map[uuid.UUID][]dtos.TicketR
 //     → Call queueHeadTask(ticketsByPool)
 func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	isTrue, err := u.allNodesHaveHeadTasks(ticketsByPool)
+	log.Printf("[ENQUEUE TASK] all node have head tasks: %v", isTrue)
 	if err != nil {
 		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get head task: %s", err.Error()))
 	}
