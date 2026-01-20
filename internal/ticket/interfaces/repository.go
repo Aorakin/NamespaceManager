@@ -36,4 +36,5 @@ type TicketRepository interface {
 	CreateQueueTicket(queueTicket models.QueueTicket) error
 	GetHeadTask() (*models.Task, error)
 	GetHeadTasksByPoolAndNodes(poolID uuid.UUID, nodeNames []string) (map[string]*models.QueueTicket, error)
+	DeleteQueue(taskID uuid.UUID) error
 }

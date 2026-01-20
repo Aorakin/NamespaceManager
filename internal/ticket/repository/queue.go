@@ -62,3 +62,12 @@ func (r *TicketRepository) GetHeadTasksByPoolAndNodes(poolID uuid.UUID, nodeName
 
 	return result, nil
 }
+
+func (r *TicketRepository) DeleteQueue(taskID uuid.UUID) error {
+	if err := r.db.Where("glider_ticket_id IN (?)",
+		r.db.Table("tickets").Select("glider_ticket_id").Where("task_id = ?", taskID),
+	).Delete(&models.QueueTicket{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
