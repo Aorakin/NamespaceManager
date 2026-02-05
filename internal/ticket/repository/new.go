@@ -46,7 +46,7 @@ func (r *TicketRepository) GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Tick
 }
 
 func (r *TicketRepository) DeleteTicketsByIDs(ticketIDs []uuid.UUID) error {
-	result := r.db.Where("id IN ?", ticketIDs).Delete(&models.Ticket{})
+	result := r.db.Where("id IN ? AND status IN ?", ticketIDs, models.UneditableStatus).Delete(&models.Ticket{})
 	if result.Error != nil {
 		return result.Error
 	}

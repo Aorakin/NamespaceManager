@@ -62,8 +62,8 @@ func (r *TicketRepository) DeleteTask(taskID uuid.UUID) error {
 		return err
 	}
 
-	// Then delete the task
-	result := r.db.Delete(&models.Task{}, "id = ?", taskID)
+	// Then delete the task only if it has a deletable status
+	result := r.db.Where("id = ? AND status IN ?", taskID, models.UneditableStatus).Delete(&models.Task{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -105,7 +105,7 @@ func (r *TicketRepository) GetTasksByIDs(taskIDs []uuid.UUID) ([]models.Task, er
 }
 
 func (r *TicketRepository) DeleteTasksByIDs(taskIDs []uuid.UUID) error {
-	result := r.db.Where("id IN ?", taskIDs).Delete(&models.Task{})
+	result := r.db.Where("id IN ? AND status IN ?", taskIDs, models.UneditableStatus).Delete(&models.Task{})
 	if result.Error != nil {
 		return result.Error
 	}
