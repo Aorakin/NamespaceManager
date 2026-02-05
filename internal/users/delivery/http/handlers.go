@@ -175,15 +175,29 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 // @Router /users/logout [post]
 func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// utils.ClearSession(c)
-		// c.SetCookie("access_token", "", -1, "/", "localhost", true, true)
-		// c.SetCookie("refresh_token", "", -1, "/", "localhost", true, true)
-		c.SetCookie("access_token", "", -1, "/", ".onepointfive.life", true, true)
-		c.SetCookie("refresh_token", "", -1, "/", ".onepointfive.life", true, true)
+		// Get refresh token from cookie
+		refreshToken, err := c.Cookie("refresh_token")
+		if err == nil && refreshToken != "" {
+			// Send logout request to clearing house to blacklist the token
+			url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/logout"
+			status, body, err := utils.SendRequestWithAccessToken(url, nil, "POST", refreshToken)
+			if err != nil {
+				// Log error but don't fail logout
+				log.Printf("Failed to blacklist token at clearing house: %v", err)
+			} else if status != http.StatusOK {
+				log.Printf("Clearing house logout failed with status %d: %s", status, string(body))
+			}
+		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+		// Clear the access token cookie
+		c.SetCookie("access_token", "", -1, "/", ".onepointfive.life", true, true)
+		// Clear the refresh token cookie
+		c.SetCookie("refresh_token", "", -1, "/users/auth", ".onepointfive.life", true, true)
+
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 	}
 }
+
 func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawQuery := c.Request.URL.RawQuery
@@ -228,7 +242,7 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		}
 
 		c.SetCookie("access_token", accessToken, 7*24*3600, "/", ".onepointfive.life", true, true)
-		c.SetCookie("refresh_token", refreshToken, 7*24*3600, "/users/auth/refresh-token", ".onepointfive.life", true, true)
+		c.SetCookie("refresh_token", refreshToken, 7*24*3600, "/users/auth", ".onepointfive.life", true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens set successfully"})
 	}
