@@ -23,6 +23,6 @@ type TicketUsecase interface {
 	RequestTicket(dtos.RequestTicketDTO, string, uuid.UUID, string) (*dtos.GliderTicketResponse, error)
 	CreateTask(request *dtos.CreateTaskRequest, userID uuid.UUID) error
 	GetTasks(userID uuid.UUID) ([]models.Task, error)
-
-	
+	DeleteTickets(request dtos.DeleteTicketsRequest, userID uuid.UUID) error
+	DeleteTasks(request dtos.DeleteTasksRequest, userID uuid.UUID) error
 }

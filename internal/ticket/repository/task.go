@@ -95,3 +95,20 @@ func (r *TicketRepository) UpdateTaskQueueInfo(taskID uuid.UUID, startTime time.
 	}
 	return nil
 }
+
+func (r *TicketRepository) GetTasksByIDs(taskIDs []uuid.UUID) ([]models.Task, error) {
+	var tasks []models.Task
+	if err := r.db.Where("id IN ?", taskIDs).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (r *TicketRepository) DeleteTasksByIDs(taskIDs []uuid.UUID) error {
+	result := r.db.Where("id IN ?", taskIDs).Delete(&models.Task{})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}

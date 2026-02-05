@@ -216,3 +216,49 @@ func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
 		c.JSON(http.StatusOK, nil)
 	}
 }
+
+func (h *TicketHandlers) DeleteTickets() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.MustGet("userID").(uuid.UUID)
+		if userID == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		var req dtos.DeleteTicketsRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			return
+		}
+
+		err := h.ticketUsecase.DeleteTickets(req, userID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(err))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "tickets deleted successfully"})
+	}
+}
+
+func (h *TicketHandlers) DeleteTasks() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.MustGet("userID").(uuid.UUID)
+		if userID == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		var req dtos.DeleteTasksRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			return
+		}
+
+		err := h.ticketUsecase.DeleteTasks(req, userID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(err))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "tasks deleted successfully"})
+	}
+}

@@ -66,3 +66,27 @@ func (u *TicketUsecase) CancelTicket(ticketID string, accessToken string) error 
 	}
 	return nil
 }
+
+func (u *TicketUsecase) DeleteTickets(request dtos.DeleteTicketsRequest, userID uuid.UUID) error {
+	// validate ownership
+	tickets, err := u.ticketRepository.GetTicketsByIDs(request.TicketIDs)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
+	}
+
+	for _, ticket := range tickets {
+		if ticket.OwnerID != userID {
+			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to the user", ticket.ID))
+		}
+		if ticket.Status != models.StatusReady && ticket.Status != models.StatusCancelled && ticket.Status != models.StatusStopped {
+			return apiError.NewBadRequestError(fmt.Errorf("ticket %s cannot be deleted in its current status", ticket.ID))
+		}
+	}
+
+	// proceed to delete
+	if err := u.ticketRepository.DeleteTicketsByIDs(request.TicketIDs); err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to delete tickets: %w", err))
+	}
+
+	return nil
+}

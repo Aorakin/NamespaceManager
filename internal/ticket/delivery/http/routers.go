@@ -31,10 +31,13 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.GET("/", ticketHandler.GetUserTickets())
 	ticketGroup.PATCH("/:ticket_id/cancel", ticketHandler.CancelTicket())
 	ticketGroup.GET("/namespace/:namespace_id", ticketHandler.GetTicketByNamespaceID())
+	ticketGroup.PATCH("/delete", ticketHandler.DeleteTickets())
 
 	// task
 	ticketGroup.POST("/tasks", ticketHandler.UseTickets())
 	// ticketGroup.GET("/tasks", ticketHandler.GetTasks())
 	ticketGroup.PATCH("/tasks/:task_id/stop", ticketHandler.StopTask())
 	ticketGroup.PATCH("/tasks/:task_id/cancel", ticketHandler.CancelTask())
+	ticketGroup.PATCH("/tasks/delete", ticketHandler.DeleteTasks())
+
 }

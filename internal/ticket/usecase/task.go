@@ -320,3 +320,22 @@ func (u *TicketUsecase) toTicketRequest(ticketID uuid.UUID) (*dtos.TicketReq, er
 
 	return ticketReq, nil
 }
+
+func (u *TicketUsecase) DeleteTasks(request dtos.DeleteTasksRequest, userID uuid.UUID) error {
+	// validate tickets belong to user
+	tickets, err := u.ticketRepository.GetTasksByIDs(request.TaskIDs)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets: %w", err))
+	}
+	for _, ticket := range tickets {
+		if ticket.OwnerID != userID {
+			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to user", ticket.ID))
+		}
+	}
+
+	// delete tickets
+	if err := u.ticketRepository.DeleteTasksByIDs(request.TaskIDs); err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to delete tickets: %w", err))
+	}
+	return nil
+}

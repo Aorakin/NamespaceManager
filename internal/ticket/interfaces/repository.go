@@ -39,4 +39,9 @@ type TicketRepository interface {
 	GetHeadTasksByPoolAndNodes(poolID uuid.UUID, nodeNames []string) (map[string]*models.QueueTicket, error)
 	DeleteQueue(taskID uuid.UUID) error
 	GetTasksByNodeNames(nodeNames []string) ([]models.Task, error)
+
+	GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error)
+	DeleteTicketsByIDs(ticketIDs []uuid.UUID) error
+	GetTasksByIDs(taskIDs []uuid.UUID) ([]models.Task, error)
+	DeleteTasksByIDs(taskIDs []uuid.UUID) error
 }
