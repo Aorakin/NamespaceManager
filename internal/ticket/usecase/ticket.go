@@ -79,7 +79,8 @@ func (u *TicketUsecase) DeleteTickets(request dtos.DeleteTicketsRequest, userID 
 		if ticket.OwnerID != userID {
 			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to the user", ticket.ID))
 		}
-		if slices.Contains(models.UneditableStatus, ticket.Status) {
+
+		if !slices.Contains(models.UneditableStatus, ticket.Status) {
 			return apiError.NewBadRequestError(fmt.Errorf("ticket %s cannot be deleted in its current status", ticket.ID))
 		}
 	}
