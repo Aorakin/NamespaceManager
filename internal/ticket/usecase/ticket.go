@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -78,7 +79,7 @@ func (u *TicketUsecase) DeleteTickets(request dtos.DeleteTicketsRequest, userID 
 		if ticket.OwnerID != userID {
 			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to the user", ticket.ID))
 		}
-		if ticket.Status != models.StatusReady && ticket.Status != models.StatusCancelled && ticket.Status != models.StatusStopped {
+		if slices.Contains(models.UneditableStatus, ticket.Status) {
 			return apiError.NewBadRequestError(fmt.Errorf("ticket %s cannot be deleted in its current status", ticket.ID))
 		}
 	}
