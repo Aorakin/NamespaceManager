@@ -117,11 +117,14 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 	}
 
 	statusUpdates := make(map[uuid.UUID]models.StatusTicket)
+	var cancelErrors []error
 
+	// First, attempt to cancel all tickets in all pools
 	for poolID, info := range ticketsByPool {
 		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			cancelErrors = append(cancelErrors, fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			continue
 		}
 
 		payload := dtos.StopTaskTickets{TicketIDs: info.ticketIDs}
@@ -129,14 +132,22 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 
 		_, err = httpclient.SendRequest(url, payload, "PATCH")
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
+			cancelErrors = append(cancelErrors, fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
+			continue
 		}
+
+		// Only add to statusUpdates if cancellation was successful
 		for _, ticketID := range info.ticketIDs {
 			statusUpdates[ticketID] = models.StatusReady
 		}
-
 	}
 
+	// If any cancellation failed, return error without updating status or deleting task
+	if len(cancelErrors) > 0 {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to cancel all tickets: %v", cancelErrors))
+	}
+
+	// All cancellations succeeded, now proceed with cleanup
 	if len(statusUpdates) > 0 {
 		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
@@ -146,6 +157,12 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 	err = u.ticketRepository.DeleteQueue(taskID)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to delete queue: %w", err))
+	}
+
+	// Update task status to cancelled before deletion
+	err = u.ticketRepository.UpdateTaskStatus(taskID, models.StatusCancelled)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to update task status: %w", err))
 	}
 
 	err = u.ticketRepository.DeleteTask(taskID)
