@@ -23,22 +23,14 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 	for _, statusRes := range req {
 		ticketIDs = append(ticketIDs, statusRes.TicketID)
 
-		if statusRes.HasError {
-			ticketUpdates[statusRes.TicketID] = models.StatusFailed
-			continue
-		}
-
-		if len(statusRes.PodStatus) == 0 {
-			fmt.Printf("Warning: No pod status found for ticketId: %s. Skipping update.", statusRes.TicketID)
-			continue
-		}
-
-		// Check if any pod has "start_failed" status
+		// Check if any pod has "start_failed" status first (before hasError check)
 		hasStartFailed := false
-		for _, pod := range statusRes.PodStatus {
-			if strings.ToLower(pod.Status) == "start_failed" {
-				hasStartFailed = true
-				break
+		if len(statusRes.PodStatus) > 0 {
+			for _, pod := range statusRes.PodStatus {
+				if strings.ToLower(pod.Status) == "start_failed" {
+					hasStartFailed = true
+					break
+				}
 			}
 		}
 
@@ -46,6 +38,16 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 			// Mark this ticket for special handling
 			startFailedTicketIDs = append(startFailedTicketIDs, statusRes.TicketID)
 			// Don't add to ticketUpdates - handleStartFailedTickets will handle the update
+			continue
+		}
+
+		if statusRes.HasError {
+			ticketUpdates[statusRes.TicketID] = models.StatusFailed
+			continue
+		}
+
+		if len(statusRes.PodStatus) == 0 {
+			fmt.Printf("Warning: No pod status found for ticketId: %s. Skipping update.", statusRes.TicketID)
 			continue
 		}
 
