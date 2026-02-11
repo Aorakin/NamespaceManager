@@ -45,8 +45,7 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		if hasStartFailed {
 			// Mark this ticket for special handling
 			startFailedTicketIDs = append(startFailedTicketIDs, statusRes.TicketID)
-			// Reset original ticket to ready (will be done after creating dummy)
-			ticketUpdates[statusRes.TicketID] = models.StatusReady
+			// Don't add to ticketUpdates - handleStartFailedTickets will handle the update
 			continue
 		}
 
