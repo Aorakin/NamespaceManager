@@ -215,10 +215,17 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) error {
 		taskID := *originalTicket.TaskID
 
 		// Create a dummy ticket (duplicate of the original) with failed status
+		// Generate a new GliderTicketID for the dummy ticket
+		dummyGliderTicketID := uuid.New()
+
+		// Copy GliderTicket and update its ID
+		dummyGliderTicket := originalTicket.GliderTicket
+		dummyGliderTicket.ID = dummyGliderTicketID
+
 		dummyTicket := models.Ticket{
 			Name:           originalTicket.Name + " (failed)",
-			GliderTicket:   originalTicket.GliderTicket,
-			GliderTicketID: originalTicket.GliderTicketID,
+			GliderTicket:   dummyGliderTicket,
+			GliderTicketID: dummyGliderTicketID, // New unique ID for dummy ticket
 			Signature:      originalTicket.Signature,
 			Status:         models.StatusFailed,
 			TaskID:         &taskID, // Keep in the same task
