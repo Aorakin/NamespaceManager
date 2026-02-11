@@ -63,9 +63,15 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 	}
 
 	// Handle start_failed tickets: create dummy tickets and reassign to tasks
+	// Returns the task IDs that were affected
+	affectedTaskIDs := make(map[uuid.UUID]struct{})
 	if len(startFailedTicketIDs) > 0 {
-		if err := u.handleStartFailedTickets(startFailedTicketIDs); err != nil {
+		taskIDs, err := u.handleStartFailedTickets(startFailedTicketIDs)
+		if err != nil {
 			return apiError.NewInternalServerError(fmt.Errorf("failed to handle start_failed tickets: %w", err))
+		}
+		for _, taskID := range taskIDs {
+			affectedTaskIDs[taskID] = struct{}{}
 		}
 	}
 
@@ -87,6 +93,11 @@ func (u *TicketUsecase) UpdateTicketStatusFromGlidelet(req []dtos.StatusRes) err
 		if ticket.TaskID != nil {
 			taskIDsMap[*ticket.TaskID] = struct{}{}
 		}
+	}
+
+	// Add the task IDs affected by start_failed tickets
+	for taskID := range affectedTaskIDs {
+		taskIDsMap[taskID] = struct{}{}
 	}
 
 	for taskID := range taskIDsMap {
@@ -200,12 +211,15 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 }
 
 // handleStartFailedTickets creates dummy tickets for failed starts and manages task assignments
-func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) error {
+// Returns the list of task IDs that were affected
+func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) ([]uuid.UUID, error) {
 	// Get original tickets
 	originalTickets, err := u.ticketRepository.GetTicketsByGliderTicketIDs(ticketIDs)
 	if err != nil {
-		return fmt.Errorf("failed to get original tickets: %w", err)
+		return nil, fmt.Errorf("failed to get original tickets: %w", err)
 	}
+
+	affectedTaskIDs := make([]uuid.UUID, 0)
 
 	for _, originalTicket := range originalTickets {
 		// Skip if ticket is not part of a task
@@ -214,6 +228,7 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) error {
 		}
 
 		taskID := *originalTicket.TaskID
+		affectedTaskIDs = append(affectedTaskIDs, taskID)
 
 		// Create a dummy ticket (duplicate of the original) with failed status
 		// Generate a new GliderTicketID for the dummy ticket
@@ -224,7 +239,7 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) error {
 		dummyGliderTicket.ID = dummyGliderTicketID
 
 		dummyTicket := models.Ticket{
-			Name:           originalTicket.Name + " (failed)",
+			Name:           originalTicket.Name,
 			GliderTicket:   dummyGliderTicket,
 			GliderTicketID: dummyGliderTicketID, // New unique ID for dummy ticket
 			Signature:      originalTicket.Signature,
@@ -241,16 +256,16 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) error {
 
 		// Create the dummy ticket in database
 		if err := u.ticketRepository.Create(&dummyTicket); err != nil {
-			return fmt.Errorf("failed to create dummy ticket for %s: %w", originalTicket.GliderTicketID, err)
+			return nil, fmt.Errorf("failed to create dummy ticket for %s: %w", originalTicket.GliderTicketID, err)
 		}
 
 		// Update original ticket: reset to ready and clear task assignment
 		originalTicket.Status = models.StatusReady
 		originalTicket.TaskID = nil
 		if err := u.ticketRepository.Update(originalTicket); err != nil {
-			return fmt.Errorf("failed to update original ticket %s: %w", originalTicket.GliderTicketID, err)
+			return nil, fmt.Errorf("failed to update original ticket %s: %w", originalTicket.GliderTicketID, err)
 		}
 	}
 
-	return nil
+	return affectedTaskIDs, nil
 }
