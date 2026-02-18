@@ -25,5 +25,5 @@ type Ticket struct {
 }
 
 func (Ticket) DefaultScope(db *gorm.DB) *gorm.DB {
-	return db.Where("failed = ?", false)
+	return db.Where("failed = ? AND deleted_at IS NULL", false)
 }
