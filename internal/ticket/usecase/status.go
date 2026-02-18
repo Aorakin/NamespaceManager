@@ -151,7 +151,7 @@ func (u *TicketUsecase) computeTicketStatus(podStatuses []dtos.PodStatus) models
 }
 
 func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
-	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID)
+	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID, true) // include failed tickets to determine if task should be marked as failed
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets by task ID: %w", err))
 	}

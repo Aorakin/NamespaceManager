@@ -109,10 +109,16 @@ func (r *TicketRepository) ClearTaskID(ticketID uuid.UUID) error {
 	return nil
 }
 
-func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID) ([]models.Ticket, error) {
+func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID, includeFailed bool) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
-		return nil, err
+	if includeFailed {
+		if err := r.db.Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.db.Scopes(models.ActiveTickets).Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+			return nil, err
+		}
 	}
 	return tickets, nil
 }
