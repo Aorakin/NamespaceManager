@@ -20,12 +20,10 @@ type Ticket struct {
 	ResourcePoolID uuid.UUID      `gorm:"type:uuid" json:"resource_pool_id"`
 	URL            string         `json:"url"`
 	Password       string         `json:"password"`
+	Failed         bool           `gorm:"index;default:false;not null" json:"failed"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
-func (t *Ticket) BeforeCreate(tx *gorm.DB) (err error) {
-	if t.ID == uuid.Nil {
-		t.ID = uuid.New()
-	}
-	return
+func (Ticket) DefaultScope(db *gorm.DB) *gorm.DB {
+	return db.Where("failed = ?", false)
 }
