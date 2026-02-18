@@ -42,7 +42,7 @@ func (r *TicketRepository) CancelTicket(ticketID string) error {
 
 func (r *TicketRepository) GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -57,7 +57,7 @@ func (r *TicketRepository) Update(ticket models.Ticket) error {
 
 func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData models.StatusTicket) error {
 	var ticket models.Ticket
-	if err := r.db.First(&ticket, "glider_ticket_id = ?", ticketID).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).First(&ticket, "glider_ticket_id = ?", ticketID).Error; err != nil {
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (r *TicketRepository) UpdateTicketStatus(ticketID uuid.UUID, updatedData mo
 
 func (r *TicketRepository) GetTicketByGliderTicketID(ID uuid.UUID) (models.Ticket, error) {
 	var ticket models.Ticket
-	if err := r.db.First(&ticket, "glider_ticket_id = ?", ID).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).First(&ticket, "glider_ticket_id = ?", ID).Error; err != nil {
 		return models.Ticket{}, err
 	}
 	return ticket, nil
@@ -103,7 +103,7 @@ func (r *TicketRepository) ClearTaskID(ticketID uuid.UUID) error {
 
 func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -119,7 +119,7 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 		for ticketID, status := range updates {
 			// Check if the ticket's current status is expired
 			var ticket models.Ticket
-			if err := tx.Where("glider_ticket_id = ?", ticketID).First(&ticket).Error; err != nil {
+			if err := tx.Scopes(models.ActiveTickets).Where("glider_ticket_id = ?", ticketID).First(&ticket).Error; err != nil {
 				log.Printf("[BATCH UPDATE TICKET STATUS] failed to fetch ticket %s: %v", ticketID, err)
 				continue
 			}

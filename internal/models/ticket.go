@@ -24,6 +24,6 @@ type Ticket struct {
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
-func (Ticket) DefaultScope(db *gorm.DB) *gorm.DB {
-	return db.Where("failed = ? AND deleted_at IS NULL", false)
+func ActiveTickets(db *gorm.DB) *gorm.DB {
+	return db.Where("failed = ?", false)
 }
