@@ -47,6 +47,10 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 	return &gliderTicket, nil
 }
 
+func (u *TicketUsecase) GetTicketByNamespaceID(namespaceId uuid.UUID) ([]models.Ticket, error) {
+	return u.ticketRepository.GetTicketByNamespaceID(namespaceId)
+}
+
 func (u *TicketUsecase) GetTicketByNamespaceIDAndNodeID(namespaceId uuid.UUID, nodeID uuid.UUID) ([]models.Ticket, error) {
 	return u.ticketRepository.GetTicketByNamespaceIDAndNodeID(namespaceId, nodeID)
 }

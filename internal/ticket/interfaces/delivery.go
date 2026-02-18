@@ -9,6 +9,7 @@ type TicketHandler interface {
 	StopTask() gin.HandlerFunc
 	GetUserTickets() gin.HandlerFunc
 	GetTicketByNamespaceID() gin.HandlerFunc
+	GetTicketByNamespaceIDAndNodeID() gin.HandlerFunc
 	UpdateTicketStatusFromGlidelet() gin.HandlerFunc
 	CancelTicket() gin.HandlerFunc
 	RequestTicket() gin.HandlerFunc
