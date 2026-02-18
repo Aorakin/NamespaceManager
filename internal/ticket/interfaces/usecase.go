@@ -10,7 +10,7 @@ type TicketUsecase interface {
 	HandleTicketCallback(dtos.CreateTicket, uuid.UUID) error
 	UseTicket([]uuid.UUID) ([]models.GliderTicket, error)
 
-	GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error)
+	GetTicketByNamespaceIDAndNodeID(namespaceID uuid.UUID, nodeID uuid.UUID) ([]models.Ticket, error)
 	GetUserTickets(uuid.UUID) ([]models.Ticket, error)
 	SaveTicket(dtos.GliderTicketResponse, string, uuid.UUID) error
 	UpdateTicketStatusFromGlidelet([]dtos.StatusRes) error

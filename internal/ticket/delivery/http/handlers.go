@@ -123,13 +123,21 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 func (h *TicketHandlers) GetTicketByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("namespace_id")
+		nodeID := c.Param("node_id")
+
 		namespaceUUID, err := uuid.Parse(namespaceID)
 		if err != nil {
 			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid namespace_id: %w", err))))
 			return
 		}
 
-		tickets, err := h.ticketUsecase.GetTicketByNamespaceID(namespaceUUID)
+		nodeUUID, err := uuid.Parse(nodeID)
+		if err != nil {
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid node_id: %w", err))))
+			return
+		}
+
+		tickets, err := h.ticketUsecase.GetTicketByNamespaceIDAndNodeID(namespaceUUID, nodeUUID)
 		if err != nil {
 			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
 			return

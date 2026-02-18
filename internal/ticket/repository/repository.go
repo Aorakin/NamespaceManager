@@ -40,9 +40,9 @@ func (r *TicketRepository) CancelTicket(ticketID string) error {
 	return nil
 }
 
-func (r *TicketRepository) GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error) {
+func (r *TicketRepository) GetTicketByNamespaceIDAndNodeID(namespaceID uuid.UUID, nodeID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ? AND node_id = ?", namespaceID, nodeID).Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil

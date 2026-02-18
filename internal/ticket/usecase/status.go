@@ -222,7 +222,6 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) ([]uuid.
 	affectedTaskIDs := make([]uuid.UUID, 0)
 
 	for _, originalTicket := range originalTickets {
-		// Skip if ticket is not part of a task
 		if originalTicket.TaskID == nil {
 			continue
 		}
@@ -230,8 +229,7 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) ([]uuid.
 		taskID := *originalTicket.TaskID
 		affectedTaskIDs = append(affectedTaskIDs, taskID)
 
-		// Create a dummy ticket (duplicate of the original) with failed status
-		// Generate a new GliderTicketID for the dummy ticket
+		// Create a dummy ticket
 		dummyGliderTicketID := uuid.New()
 
 		// Copy GliderTicket and update its ID
@@ -252,6 +250,7 @@ func (u *TicketUsecase) handleStartFailedTickets(ticketIDs []uuid.UUID) ([]uuid.
 			ResourcePoolID: originalTicket.ResourcePoolID,
 			URL:            originalTicket.URL,
 			Password:       originalTicket.Password,
+			Failed:         true,
 		}
 
 		// Create the dummy ticket in database

@@ -11,7 +11,7 @@ type TicketRepository interface {
 	// ticket
 	Create(*models.Ticket) error
 	GetTicketsByTaskID(uuid.UUID) ([]models.Ticket, error)
-	GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error)
+	GetTicketByNamespaceIDAndNodeID(namespaceID uuid.UUID, nodeID uuid.UUID) ([]models.Ticket, error)
 	GetUserTickets(userID uuid.UUID) ([]models.Ticket, error)
 	UpdateTicketStatus(uuid.UUID, models.StatusTicket) error
 	Update(ticket models.Ticket) error
