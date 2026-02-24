@@ -337,59 +337,68 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 	return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time after %d iterations", maxIterations))
 }
 
-// requeue handles re-enqueuing tasks associated with a specific node name.
-// when resource on a node is finished or stopped, this function is called,
-// it will attempt to re-enqueue all queued tasks that were waiting for that node for a chance to start earlier.
+// requeue handles re-enqueuing tasks associated with freed nodes.
+// Called when a resource is finished, stopped, or expired on a node.
+// It clears all queue entries for the affected nodes, then re-enqueues
+// the tasks in FIFO order (by created_at) so they can negotiate earlier start times
+// against the newly freed resources.
 func (u *TicketUsecase) requeue(nodeNames []string) error {
 	queuedTasks, err := u.ticketRepository.GetTasksByNodeNames(nodeNames)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to get tasks by node name: %w", err))
 	}
-	log.Printf("[REQUEUE] Found %d tasks for node %s", len(queuedTasks), nodeNames)
+	log.Printf("[REQUEUE] Found %d tasks for nodes %v", len(queuedTasks), nodeNames)
 
+	// Pre-compute formatted tickets for all tasks
 	formattedTickets := make(map[uuid.UUID]map[uuid.UUID][]dtos.TicketReq)
 	for _, task := range queuedTasks {
-		ticketsByPool, _ := u.getFormattedTickets(task.Tickets)
+		ticketsByPool, err := u.getFormattedTickets(task.Tickets)
+		if err != nil {
+			log.Printf("[REQUEUE] Failed to format tickets for task %s: %v", task.ID, err)
+			continue
+		}
 		formattedTickets[task.ID] = ticketsByPool
 	}
 
+	// Clear all queue entries so nodes are clean before re-enqueue
 	for _, task := range queuedTasks {
-		ticketsByPool := formattedTickets[task.ID]
-		u.fallBackQueueTask(ticketsByPool)
-		u.ticketRepository.DeleteQueue(task.ID)
+		ticketsByPool, ok := formattedTickets[task.ID]
+		if !ok {
+			continue
+		}
+		if err := u.fallBackQueueTask(ticketsByPool); err != nil {
+			log.Printf("[REQUEUE] Failed to fallback task %s: %v", task.ID, err)
+		}
+		if err := u.ticketRepository.DeleteQueue(task.ID); err != nil {
+			log.Printf("[REQUEUE] Failed to delete queue for task %s: %v", task.ID, err)
+		}
 	}
-	log.Printf("[REQUEUE] Deleted queue entries for node %s", nodeNames)
+	log.Printf("[REQUEUE] Cleared queue entries for nodes %v", nodeNames)
 
+	// Re-enqueue in created_at order (FIFO)
 	for _, task := range queuedTasks {
-		ticketsByPool := formattedTickets[task.ID]
+		ticketsByPool, ok := formattedTickets[task.ID]
+		if !ok {
+			continue
+		}
+
 		startTime, err := u.EnqueueTask(ticketsByPool)
 		if err != nil {
 			log.Printf("[REQUEUE] Failed to re-enqueue task %s: %v", task.ID, err)
 			continue
 		}
-		log.Printf("[REQUEUE] Successfully re-enqueued task %s", task.ID)
 
 		status := models.StatusQueued
-		if !startTime.IsZero() {
+		if !startTime.IsZero() && time.Until(startTime) <= time.Minute {
 			status = models.StatusPending
-			if time.Until(startTime) > time.Minute {
-				status = models.StatusQueued
-			}
-
-			log.Printf("[REQUEUE] Start time is scheduled at %v, status: %s", startTime, status)
-			err = u.confirmTickets(ticketsByPool)
-			if err != nil {
-				log.Printf("[REQUEUE] Failed to confirm tickets for task %s: %v", task.ID, err)
-				continue
-			}
-
 		}
-		err = u.ticketRepository.UpdateTaskQueueInfo(task.ID, startTime, status)
-		if err != nil {
+
+		if err := u.ticketRepository.UpdateTaskQueueInfo(task.ID, startTime, status); err != nil {
 			log.Printf("[REQUEUE] Failed to update task %s queue info: %v", task.ID, err)
 			continue
 		}
-		log.Printf("[REQUEUE] Updated task %s queue info with start time %s and status %s", task.ID, startTime, status)
+
+		log.Printf("[REQUEUE] Successfully re-enqueued task %s with start time %s and status %s", task.ID, startTime, status)
 	}
 
 	return nil

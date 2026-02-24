@@ -73,13 +73,13 @@ func (r *TicketRepository) DeleteTask(taskID uuid.UUID) error {
 func (r *TicketRepository) GetTasksByNodeNames(nodeNames []string) ([]models.Task, error) {
 	var tasks []models.Task
 	err := r.db.
+		Distinct("tasks.*").
 		Model(&models.Task{}).
 		Preload("Tickets").
 		Joins("JOIN tickets ON tickets.task_id = tasks.id").
 		Where("tasks.status = ?", models.StatusQueued).
-		Where("tickets.task_id IS NOT NULL").
 		Where("tickets.glider_ticket->>'node_name' IN ?", nodeNames).
-		Order("created_at asc").
+		Order("tasks.created_at asc").
 		Find(&tasks).Error
 
 	if err != nil {

@@ -16,6 +16,7 @@ type Task struct {
 	OwnerID            uuid.UUID      `gorm:"type:uuid;not null" json:"owner_id"`
 	CreatedAt          time.Time      `json:"created_at"`
 	DeletedAt          gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	StartedAt          *time.Time     `json:"started_at"`
 }
 
 func (t *Task) BeforeCreate(tx *gorm.DB) (err error) {
