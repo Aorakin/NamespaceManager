@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
 	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/google/uuid"
 )
 
@@ -196,6 +198,7 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 			taskStatus = models.StatusPending
 		default:
 			if err := u.clusterRollback(taskID); err != nil {
+				log.Printf("[UPDATE TASK STATUS] Cluster rollback failed for task %s: %v", taskID, err)
 				return apiError.NewInternalServerError(fmt.Errorf("failed to rollback cluster: %w", err))
 			}
 			taskStatus = models.StatusFailed
@@ -224,7 +227,7 @@ func (u *TicketUsecase) clusterRollback(taskID uuid.UUID) error {
 	}
 
 	// 1. Rollback actual cluster resources
-	if err := u.rollbackClusterResources(taskID); err != nil {
+	if err := u.rollbackClusterResources(tickets); err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to rollback cluster resources: %w", err))
 	}
 
@@ -276,7 +279,33 @@ func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []m
 	return nil
 }
 
-func (u *TicketUsecase) rollbackClusterResources(taskID uuid.UUID) error {
+func (u *TicketUsecase) rollbackClusterResources(tickets []models.Ticket) error {
 	// To be implemented
+	ticketIDs := []uuid.UUID{}
+	for _, ticket := range tickets {
+		ticketIDs = append(ticketIDs, ticket.GliderTicketID)
+	}
+
+	ticketsByPool, err := u.groupTicketByPool(tickets)
+	if err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to group ticket IDs by pool: %w", err))
+	}
+	for poolID, poolTickets := range ticketsByPool {
+		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
+		if err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+		}
+
+		url := poolURN + "/api/v1/ticket/rollbackPods"
+		payload := dtos.ResetTicketRequest{
+			TicketIDs: ticketIDs,
+		}
+
+		_, err = httpclient.SendRequest(url, payload, "PATCH")
+		if err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to send rollback request to pool %s: %w", poolID, err))
+		}
+	}
+
 	return nil
 }

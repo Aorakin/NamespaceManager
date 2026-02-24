@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"strconv"
+	"sync"
 
 	"github.com/NamespaceManager/internal/models"
 	namespaceInterfaces "github.com/NamespaceManager/internal/namespace/interfaces"
@@ -16,6 +17,7 @@ type TicketUsecase struct {
 	ticketRepository interfaces.TicketRepository
 	namespaceRepo    namespaceInterfaces.NamespaceRepository
 	userRepo         userInterfaces.UsersRepository
+	enqueueMu        sync.Mutex
 }
 
 func NewTicketUsecase(ticketRepository interfaces.TicketRepository, namespaceRepo namespaceInterfaces.NamespaceRepository, userRepo userInterfaces.UsersRepository) interfaces.TicketUsecase {

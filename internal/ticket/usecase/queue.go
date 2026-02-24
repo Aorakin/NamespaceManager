@@ -173,6 +173,13 @@ func (u *TicketUsecase) queueHeadTask(ticketsByPool map[uuid.UUID][]dtos.TicketR
 //     (Some nodes may have existing head tasks; this becomes their second head task)
 //     → Call queueHeadTask(ticketsByPool)
 func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
+	u.enqueueMu.Lock()
+	defer u.enqueueMu.Unlock()
+	return u.enqueueTask(ticketsByPool)
+}
+
+// enqueueTask is the internal implementation, assumes lock is already held.
+func (u *TicketUsecase) enqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	isTrue, err := u.allNodesHaveHeadTasks(ticketsByPool)
 	log.Printf("[ENQUEUE TASK] all node have head tasks: %v", isTrue)
 	if err != nil {
@@ -184,7 +191,6 @@ func (u *TicketUsecase) EnqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 	}
 
 	return u.backfillTask(ticketsByPool)
-
 }
 
 func (u *TicketUsecase) insertQueue(ticketsByPool map[uuid.UUID][]dtos.TicketReq, startTime time.Time) error {
@@ -217,46 +223,61 @@ func (u *TicketUsecase) getNodeNames(tickets []dtos.TicketReq) []string {
 func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.TicketReq) (time.Time, error) {
 	startTime := time.Now()
 	maxIterations := 20
-	iteration := 0
 
 	log.Printf("[NEGOTIATE START TIME] Starting multi-pool negotiation with %d pool(s)", len(ticketsByPool))
 
-	for iteration < maxIterations {
-		iteration++
+	for iteration := 1; iteration <= maxIterations; iteration++ {
 		log.Printf("[NEGOTIATE START TIME] Iteration %d, trying with start time: %s", iteration, startTime.String())
 
+		type poolResult struct {
+			poolID    uuid.UUID
+			startTime time.Time
+			err       error
+		}
+
+		results := make(chan poolResult, len(ticketsByPool))
+		for poolID, poolTickets := range ticketsByPool {
+			go func(poolID uuid.UUID, poolTickets []dtos.TicketReq) {
+				poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
+				if err != nil {
+					results <- poolResult{poolID: poolID, err: fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err)}
+					return
+				}
+
+				payload := dtos.QueuePayload{Tickets: poolTickets, StartTime: startTime}
+				response, err := httpclient.SendRequest(poolURN+"/api/v1/ticket/createList", payload, "POST")
+				if err != nil {
+					results <- poolResult{poolID: poolID, err: err}
+					return
+				}
+
+				var poolResponse dtos.PoolQueueResponse
+				if err := json.Unmarshal(response, &poolResponse); err != nil {
+					results <- poolResult{poolID: poolID, err: err}
+					return
+				}
+
+				results <- poolResult{poolID: poolID, startTime: poolResponse.StartTime}
+			}(poolID, poolTickets)
+		}
+
+		// Collect results
 		poolResponses := make(map[uuid.UUID]time.Time)
 		hasError := false
-
-		// Ask each pool for a slot starting from current startTime
-		for poolID, poolTickets := range ticketsByPool {
-			poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
-			if err != nil {
-				return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
-			}
-
-			url := poolURN + "/api/v1/ticket/createList"
-			payload := dtos.QueuePayload{
-				Tickets:   poolTickets,
-				StartTime: startTime,
-			}
-
-			response, err := httpclient.SendRequest(url, payload, "POST")
-			if err != nil {
-				log.Printf("[NEGOTIATE START TIME] PoolID: %s, Error: %v", poolID, err.Error())
+		for range ticketsByPool {
+			res := <-results
+			if res.err != nil {
+				log.Printf("[NEGOTIATE START TIME] PoolID: %s, Error: %v", res.poolID, res.err)
 				hasError = true
-				break
+				continue
 			}
-
-			var poolResponse dtos.PoolQueueResponse
-			if err := json.Unmarshal(response, &poolResponse); err != nil {
-				log.Printf("[NEGOTIATE START TIME] Failed to unmarshal response from pool %s: %v", poolID, err)
+			if res.startTime.IsZero() {
+				log.Printf("[NEGOTIATE START TIME] Pool %s returned zero time", res.poolID)
 				hasError = true
-				break
+				continue
 			}
-
-			poolResponses[poolID] = poolResponse.StartTime
-			log.Printf("[NEGOTIATE START TIME] PoolID: %s returned start time: %s", poolID, poolResponse.StartTime.String())
+			poolResponses[res.poolID] = res.startTime
+			log.Printf("[NEGOTIATE START TIME] PoolID: %s returned start time: %s", res.poolID, res.startTime.String())
 		}
 
 		if hasError {
@@ -268,68 +289,35 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 			continue
 		}
 
-		// Check if any pool returned zero time (resources not available)
-		hasZeroTime := false
-		for poolID, t := range poolResponses {
-			if t.IsZero() {
-				log.Printf("[NEGOTIATE START TIME] Pool %s returned zero time (resources not available)", poolID)
-				hasZeroTime = true
-				break
-			}
-		}
-
-		if hasZeroTime {
-			log.Printf("[NEGOTIATE START TIME] Pool returned zero time, calling fallback and retrying")
-			if err := u.fallBackQueueTask(ticketsByPool); err != nil {
-				log.Printf("[NEGOTIATE START TIME] Fallback failed: %v", err)
-			}
-			startTime = startTime.Add(time.Minute)
-			continue
-		}
-
-		// Check if all pools returned the same start time
+		// Find latest time and check if all pools agree
+		latestTime := startTime
 		isAllSame := true
 		var firstTime time.Time
-		firstPoolID := ""
 
 		for poolID, t := range poolResponses {
 			if firstTime.IsZero() {
 				firstTime = t
-				firstPoolID = poolID.String()
 			} else if !t.Equal(firstTime) {
 				isAllSame = false
-				log.Printf("[NEGOTIATE START TIME] Time mismatch: Pool %s (%s) != Pool %s (%s)",
-					firstPoolID, firstTime.String(), poolID, t.String())
-				break
+				log.Printf("[NEGOTIATE START TIME] Time mismatch at pool %s: %s != %s", poolID, t.String(), firstTime.String())
 			}
-		}
-
-		// If all pools agreed on the same time, we're done
-		if isAllSame {
-			log.Printf("[NEGOTIATE START TIME] All pools agreed on start time: %s after %d iteration(s)", firstTime.String(), iteration)
-			return firstTime, nil
-		}
-
-		// Pools didn't agree, call fallback before next iteration
-		log.Printf("[NEGOTIATE START TIME] Pools didn't agree on time, calling fallback before retry")
-		if err := u.fallBackQueueTask(ticketsByPool); err != nil {
-			log.Printf("[NEGOTIATE START TIME] Fallback failed: %v", err)
-		}
-
-		// Find the latest time among all pool responses
-		latestTime := startTime
-		for _, t := range poolResponses {
 			if t.After(latestTime) {
 				latestTime = t
 			}
 		}
 
-		// Move to the latest time for next iteration
+		if isAllSame {
+			log.Printf("[NEGOTIATE START TIME] All pools agreed on start time: %s after %d iteration(s)", firstTime.String(), iteration)
+			return firstTime, nil
+		}
+
+		log.Printf("[NEGOTIATE START TIME] Pools didn't agree, calling fallback and moving to latest time: %s", latestTime.String())
+		if err := u.fallBackQueueTask(ticketsByPool); err != nil {
+			log.Printf("[NEGOTIATE START TIME] Fallback failed: %v", err)
+		}
 		startTime = latestTime
-		log.Printf("[NEGOTIATE START TIME] Moving to latest time: %s for next iteration", latestTime.String())
 	}
 
-	// Max iterations reached, call fallback and return error
 	log.Printf("[NEGOTIATE START TIME] Failed to negotiate after %d iterations, calling fallback", maxIterations)
 	if err := u.fallBackQueueTask(ticketsByPool); err != nil {
 		log.Printf("[NEGOTIATE START TIME] Final fallback failed: %v", err)
@@ -343,6 +331,9 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 // the tasks in FIFO order (by created_at) so they can negotiate earlier start times
 // against the newly freed resources.
 func (u *TicketUsecase) requeue(nodeNames []string) error {
+	u.enqueueMu.Lock()
+	defer u.enqueueMu.Unlock()
+
 	queuedTasks, err := u.ticketRepository.GetTasksByNodeNames(nodeNames)
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to get tasks by node name: %w", err))
@@ -382,7 +373,7 @@ func (u *TicketUsecase) requeue(nodeNames []string) error {
 			continue
 		}
 
-		startTime, err := u.EnqueueTask(ticketsByPool)
+		startTime, err := u.enqueueTask(ticketsByPool)
 		if err != nil {
 			log.Printf("[REQUEUE] Failed to re-enqueue task %s: %v", task.ID, err)
 			continue
