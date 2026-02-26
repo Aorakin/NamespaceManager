@@ -155,3 +155,9 @@ func (r *TicketRepository) BatchUpdateTicketStatuses(updates map[uuid.UUID]model
 		return nil
 	})
 }
+
+func (r *TicketRepository) BatchClearTaskIDs(ticketIDs []uuid.UUID) error {
+	return r.db.Model(&models.Ticket{}).
+		Where("id IN ?", ticketIDs).
+		Update("task_id", nil).Error
+}

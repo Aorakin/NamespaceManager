@@ -45,4 +45,5 @@ type TicketRepository interface {
 	DeleteTicketsByIDs(ticketIDs []uuid.UUID) error
 	GetTasksByIDs(taskIDs []uuid.UUID) ([]models.Task, error)
 	DeleteTasksByIDs(taskIDs []uuid.UUID) error
+	BatchClearTaskIDs(ticketIDs []uuid.UUID) error
 }

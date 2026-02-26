@@ -227,20 +227,16 @@ func (u *TicketUsecase) clusterRollback(taskID uuid.UUID) error {
 	}
 
 	// 1. Rollback actual cluster resources
-	if err := u.rollbackClusterResources(tickets); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to rollback cluster resources: %w", err))
-	}
+	u.rollbackClusterResources(tickets)
 
 	// 2. Create dummy failed tickets and reset originals
-	if err := u.createDummyTicketsAndReset(taskID, tickets); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to create dummy tickets: %w", err))
-	}
+	u.createDummyTicketsAndReset(taskID, tickets)
 
 	return nil
 }
-
 func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []models.Ticket) error {
 	ticketUpdates := make(map[uuid.UUID]models.StatusTicket)
+	ticketIDs := make([]uuid.UUID, 0, len(tickets))
 
 	for _, ticket := range tickets {
 		dummyGliderTicketID := uuid.New()
@@ -266,21 +262,26 @@ func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []m
 		}
 
 		if err := u.ticketRepository.Create(&dummyTicket); err != nil {
-			return fmt.Errorf("failed to create dummy ticket for %s: %w", ticket.GliderTicketID, err)
+			log.Printf("[DUMMY TICKET] Failed to create dummy ticket for %s: %v", ticket.GliderTicketID, err)
+			continue
 		}
 
 		ticketUpdates[ticket.ID] = models.StatusReady
+		ticketIDs = append(ticketIDs, ticket.ID)
 	}
 
 	if err := u.ticketRepository.BatchUpdateTicketStatuses(ticketUpdates); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+		log.Printf("[DUMMY TICKET] Failed to batch update ticket statuses: %v", err)
+	}
+
+	if err := u.ticketRepository.BatchClearTaskIDs(ticketIDs); err != nil {
+		log.Printf("[DUMMY TICKET] Failed to batch clear task IDs: %v", err)
 	}
 
 	return nil
 }
 
 func (u *TicketUsecase) rollbackClusterResources(tickets []models.Ticket) error {
-	// To be implemented
 	ticketIDs := []uuid.UUID{}
 	for _, ticket := range tickets {
 		ticketIDs = append(ticketIDs, ticket.GliderTicketID)
@@ -290,21 +291,22 @@ func (u *TicketUsecase) rollbackClusterResources(tickets []models.Ticket) error 
 	if err != nil {
 		return apiError.NewInternalServerError(fmt.Errorf("failed to group ticket IDs by pool: %w", err))
 	}
+
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			log.Printf("[ROLLBACK] Failed to get pool URN for pool %s: %v", poolID, err)
+			continue
 		}
 
-		url := poolURN + "/api/v1/ticket/rollbackPods"
-		payload := dtos.ResetTicketRequest{
-			TicketIDs: ticketIDs,
-		}
-
-		_, err = httpclient.SendRequest(url, payload, "PATCH")
+		payload := dtos.ResetTicketRequest{TicketIDs: ticketIDs}
+		_, err = httpclient.SendRequest(poolURN+"/api/v1/ticket/rollbackPods", payload, "PATCH")
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to send rollback request to pool %s: %w", poolID, err))
+			log.Printf("[ROLLBACK] Failed to send rollback request to pool %s: %v", poolID, err)
+			continue
 		}
+
+		log.Printf("[ROLLBACK] Successfully rolled back pool %s", poolID)
 	}
 
 	return nil
