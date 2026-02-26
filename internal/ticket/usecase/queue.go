@@ -281,12 +281,11 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 		}
 
 		if hasError {
-			log.Printf("[NEGOTIATE START TIME] Error occurred, calling fallback and retrying")
+			log.Printf("[NEGOTIATE START TIME] Error occurred, calling fallback and aborting")
 			if err := u.fallBackQueueTask(ticketsByPool); err != nil {
 				log.Printf("[NEGOTIATE START TIME] Fallback failed: %v", err)
 			}
-			startTime = startTime.Add(time.Minute)
-			continue
+			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: pool returned error"))
 		}
 
 		// Find latest time and check if all pools agree
