@@ -188,9 +188,12 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 
 	allRedeemed := anyRedeemed && !anyFailed && !anyStopped && !anyPending && !anyExpired
 	// update task start time
-	if err := u.ticketRepository.UpdateTaskStartTime(taskID, time.Now()); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to update task queue info: %w", err))
+	if allRedeemed && task.StartedAt == nil {
+		if err := u.ticketRepository.UpdateTaskStartTime(taskID, time.Now()); err != nil {
+			return apiError.NewInternalServerError(fmt.Errorf("failed to update task start time: %w", err))
+		}
 	}
+
 	alreadyActivated := task.StartedAt != nil
 
 	var taskStatus models.StatusTicket
