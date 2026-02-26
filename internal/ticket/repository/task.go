@@ -112,3 +112,10 @@ func (r *TicketRepository) DeleteTasksByIDs(taskIDs []uuid.UUID) error {
 
 	return nil
 }
+
+func (r *TicketRepository) UpdateTaskStartTime(taskID uuid.UUID, startTime time.Time) error {
+	if err := r.db.Model(&models.Task{}).Where("id = ?", taskID).Update("started_at", startTime).Error; err != nil {
+		return err
+	}
+	return nil
+}

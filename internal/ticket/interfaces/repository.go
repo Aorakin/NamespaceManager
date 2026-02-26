@@ -26,6 +26,7 @@ type TicketRepository interface {
 	ClearTaskID(uuid.UUID) error
 	DeleteTask(uuid.UUID) error
 	UpdateTaskQueueInfo(uuid.UUID, time.Time, models.StatusTicket) error
+	UpdateTaskStartTime(uuid.UUID, time.Time) error
 
 	GetTicketsByGliderTicketIDs(gliderTicketIDs []uuid.UUID) ([]models.Ticket, error)
 	UpdateCodeServerInfo(ticketID uuid.UUID, url string, password string) error

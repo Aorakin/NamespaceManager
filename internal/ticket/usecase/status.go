@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/NamespaceManager/internal/models"
 	"github.com/NamespaceManager/internal/ticket/dtos"
@@ -186,6 +187,10 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 	}
 
 	allRedeemed := anyRedeemed && !anyFailed && !anyStopped && !anyPending && !anyExpired
+	// update task start time
+	if err := u.ticketRepository.UpdateTaskStartTime(taskID, time.Now()); err != nil {
+		return apiError.NewInternalServerError(fmt.Errorf("failed to update task queue info: %w", err))
+	}
 	alreadyActivated := task.StartedAt != nil
 
 	var taskStatus models.StatusTicket

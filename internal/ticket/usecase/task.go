@@ -225,11 +225,13 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 	}
 
 	if len(statusUpdates) > 0 {
+		log.Printf("[STOP TASK] Updating ticket statuses: %v", statusUpdates)
 		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
 			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
 		}
 	}
 
+	log.Printf("[STOP TASK] Update task status to stopped for task %s", taskID)
 	if err := u.updateTaskStatus(taskID); err != nil {
 		return nil, err
 	}
