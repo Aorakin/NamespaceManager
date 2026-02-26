@@ -246,7 +246,10 @@ func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []m
 	ticketUpdates := make(map[uuid.UUID]models.StatusTicket)
 	ticketIDs := make([]uuid.UUID, 0, len(tickets))
 
+	log.Printf("[DUMMY TICKET] Creating dummy tickets and resetting original tickets for task %s", taskID)
+
 	for _, ticket := range tickets {
+		log.Printf("[DUMMY TICKET] Creating dummy ticket for original ticket %s", ticket.GliderTicketID)
 		dummyGliderTicketID := uuid.New()
 
 		dummyGliderTicket := ticket.GliderTicket
@@ -278,6 +281,7 @@ func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []m
 		ticketIDs = append(ticketIDs, ticket.ID)
 	}
 
+	log.Printf("[DUMMY TICKET] total dummy tickets created: %d for task %s", len(ticketUpdates), taskID)
 	if err := u.ticketRepository.BatchUpdateTicketStatuses(ticketUpdates); err != nil {
 		log.Printf("[DUMMY TICKET] Failed to batch update ticket statuses: %v", err)
 	}
