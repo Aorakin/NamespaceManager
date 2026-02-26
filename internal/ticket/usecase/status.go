@@ -277,7 +277,7 @@ func (u *TicketUsecase) createDummyTicketsAndReset(taskID uuid.UUID, tickets []m
 			continue
 		}
 
-		ticketUpdates[ticket.ID] = models.StatusReady
+		ticketUpdates[ticket.GliderTicketID] = models.StatusReady
 		ticketIDs = append(ticketIDs, ticket.ID)
 	}
 
