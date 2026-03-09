@@ -42,7 +42,7 @@ func (r *TicketRepository) CancelTicket(ticketID string) error {
 
 func (r *TicketRepository) GetTicketByNamespaceID(namespaceID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ?", namespaceID).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ?", namespaceID).Order("created_at asc").Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -50,7 +50,7 @@ func (r *TicketRepository) GetTicketByNamespaceID(namespaceID uuid.UUID) ([]mode
 
 func (r *TicketRepository) GetTicketByNamespaceIDAndNodeID(namespaceID uuid.UUID, nodeID uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ? AND glider_ticket ->> 'node_id' = ?", namespaceID, nodeID).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("namespace_id = ? AND glider_ticket ->> 'node_id' = ?", namespaceID, nodeID).Order("created_at asc").Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -112,11 +112,11 @@ func (r *TicketRepository) ClearTaskID(ticketID uuid.UUID) error {
 func (r *TicketRepository) GetTicketsByTaskID(taskID uuid.UUID, includeFailed bool) ([]models.Ticket, error) {
 	var tickets []models.Ticket
 	if includeFailed {
-		if err := r.db.Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+		if err := r.db.Where("task_id = ?", taskID).Order("created_at asc").Find(&tickets).Error; err != nil {
 			return nil, err
 		}
 	} else {
-		if err := r.db.Scopes(models.ActiveTickets).Where("task_id = ?", taskID).Find(&tickets).Error; err != nil {
+		if err := r.db.Scopes(models.ActiveTickets).Where("task_id = ?", taskID).Order("created_at asc").Find(&tickets).Error; err != nil {
 			return nil, err
 		}
 	}

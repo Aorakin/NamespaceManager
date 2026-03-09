@@ -98,7 +98,7 @@ func (r *TicketRepository) UpdateTaskQueueInfo(taskID uuid.UUID, startTime time.
 
 func (r *TicketRepository) GetTasksByIDs(taskIDs []uuid.UUID) ([]models.Task, error) {
 	var tasks []models.Task
-	if err := r.db.Where("id IN ?", taskIDs).Find(&tasks).Error; err != nil {
+	if err := r.db.Where("id IN ?", taskIDs).Order("created_at asc").Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	return tasks, nil

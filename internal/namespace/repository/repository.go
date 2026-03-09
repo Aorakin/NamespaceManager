@@ -40,8 +40,8 @@ func (r *NamespaceRepository) GetNsList(userID uuid.UUID) ([]*models.Namespace, 
 	err := r.db.
 		Joins("JOIN user_namespaces ON user_namespaces.namespace_id = namespaces.id").
 		Where("user_namespaces.user_id = ?", userID).
-		Find(&NSlist).
-		Order("urn ASC").Error
+		Order("urn ASC").
+		Find(&NSlist).Error
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (r *NamespaceRepository) FetchNamespace(namespaceID uuid.UUID, userIDs []uu
 	}
 
 	var users []models.User
-	if err := r.db.Where("id IN (?)", userIDs).Find(&users).Error; err != nil {
+	if err := r.db.Where("id IN (?)", userIDs).Order("id asc").Find(&users).Error; err != nil {
 		return namespace, nil, err
 	}
 

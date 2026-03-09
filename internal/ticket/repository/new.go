@@ -15,7 +15,7 @@ func (r *TicketRepository) GetUserTickets(userID uuid.UUID) ([]models.Ticket, er
 
 func (r *TicketRepository) GetTicketsByGliderTicketIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("glider_ticket_id IN ?", ticketIDs).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("glider_ticket_id IN ?", ticketIDs).Order("created_at asc").Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil
@@ -39,7 +39,7 @@ func (r *TicketRepository) UpdateCodeServerInfo(ticketID uuid.UUID, url string, 
 
 func (r *TicketRepository) GetTicketsByIDs(ticketIDs []uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
-	if err := r.db.Scopes(models.ActiveTickets).Where("id IN ?", ticketIDs).Find(&tickets).Error; err != nil {
+	if err := r.db.Scopes(models.ActiveTickets).Where("id IN ?", ticketIDs).Order("created_at asc").Find(&tickets).Error; err != nil {
 		return nil, err
 	}
 	return tickets, nil

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,7 +68,13 @@ func (s *SpecResourceList) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("failed to unmarshal JSON value: %v", value)
 	}
-	return json.Unmarshal(bytes, s)
+	if err := json.Unmarshal(bytes, s); err != nil {
+		return err
+	}
+	sort.Slice(*s, func(i, j int) bool {
+		return (*s)[i].Name < (*s)[j].Name
+	})
+	return nil
 }
 
 type StatusTicket string
