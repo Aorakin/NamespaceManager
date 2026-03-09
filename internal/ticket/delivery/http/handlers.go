@@ -116,7 +116,7 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 		}
 
 		// Format and return response
-		c.JSON(http.StatusCreated, gin.H{"ticket": gliderTicket})
+		c.JSON(http.StatusCreated, gin.H{"ticket": gliderTicket.Ticket})
 	}
 }
 

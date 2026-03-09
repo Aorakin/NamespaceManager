@@ -28,16 +28,17 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 	}
 
 	ticket := models.Ticket{
-		Name:           request.Name,
-		GliderTicket:   gliderTicket.Ticket,
-		GliderTicketID: gliderTicket.Ticket.ID,
-		Signature:      gliderTicket.Signature,
-		Status:         models.StatusReady,
-		OwnerID:        userID,
-		OwnerName:      username,
-		NamespaceID:    request.NamespaceID,
-		ResourcePoolID: gliderTicket.Ticket.ResourcePoolID,
-		GlideletURN:    gliderTicket.Ticket.GlideletURN,
+		Name:            request.Name,
+		GliderTicket:    gliderTicket.Ticket,
+		GliderTicketID:  gliderTicket.Ticket.ID,
+		Signature:       gliderTicket.Signature,
+		Status:          models.StatusReady,
+		OwnerID:         userID,
+		OwnerName:       username,
+		NamespaceID:     request.NamespaceID,
+		ResourcePoolID:  gliderTicket.Ticket.ResourcePoolID,
+		GlideletURN:     gliderTicket.Ticket.GlideletURN,
+		NodeDisplayName: gliderTicket.Ticket.NodeDisplayName,
 	}
 
 	if err := u.ticketRepository.Create(&ticket); err != nil {

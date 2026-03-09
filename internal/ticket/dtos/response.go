@@ -20,8 +20,6 @@ type UserTicketResponse struct {
 	ID           string              `json:"id"`
 	Name         string              `json:"name"`
 	GliderTicket models.GliderTicket `json:"ticket"`
-	Signature    string              `json:"signature"`
 	Status       string              `json:"status"`
 	OwnerName    string              `json:"owner_name"`
 }
-
