@@ -78,5 +78,6 @@ type ResourceType struct {
 type ResourcesPoolDetailDTO struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
+	DisplayName    string `json:"display_name"`
 	OrganizationID string `json:"organization_id"`
 }
