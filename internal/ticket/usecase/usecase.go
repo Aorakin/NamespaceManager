@@ -84,6 +84,7 @@ func (u *TicketUsecase) getFormattedTickets(tickets []models.Ticket) (map[uuid.U
 			Signature:    ticket.Signature,
 			Spec:         u.formatGliderSpec(ticket),
 			NodeName:     ticket.GliderTicket.NodeName,
+			Ticket:       ticket.GliderTicket,
 		}
 
 		ticketsByPool[poolID] = append(ticketsByPool[poolID], ticketReq)

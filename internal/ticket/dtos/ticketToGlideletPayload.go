@@ -1,17 +1,21 @@
 package dtos
 
-import "github.com/google/uuid"
+import (
+	"github.com/NamespaceManager/internal/models"
+	"github.com/google/uuid"
+)
 
 type TicketReq struct {
-	GlideletURN       string     `json:"glidelet_urn"`
-	ID                uuid.UUID  `json:"id"`
-	Lease             string     `json:"lease"`
-	NamespaceURN      string     `json:"namespace_urn"`
-	RedeemTimeout     string     `json:"redeem_timeout"`
-	ReferenceTicketID string     `json:"reference_ticket_id"`
-	Signature         string     `json:"signature"`
-	Spec              GliderSpec `json:"spec"`
-	NodeName          string     `json:"node_name"`
+	GlideletURN       string              `json:"glidelet_urn"`
+	ID                uuid.UUID           `json:"id"`
+	Lease             string              `json:"lease"`
+	NamespaceURN      string              `json:"namespace_urn"`
+	RedeemTimeout     string              `json:"redeem_timeout"`
+	ReferenceTicketID string              `json:"reference_ticket_id"`
+	Signature         string              `json:"signature"`
+	Spec              GliderSpec          `json:"spec"`
+	NodeName          string              `json:"node_name"`
+	Ticket            models.GliderTicket `json:"ticket"`
 }
 
 type GliderSpec struct {

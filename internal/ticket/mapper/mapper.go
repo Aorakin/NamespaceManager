@@ -59,6 +59,7 @@ func ToTicketRequest(ticket models.Ticket) (*dtos.TicketReq, error) {
 			PoolID:    poolID,
 			Resources: resources,
 		},
+		Ticket: ticket.GliderTicket,
 	}
 
 	return req, nil
