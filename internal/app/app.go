@@ -12,7 +12,6 @@ import (
 
 	"github.com/NamespaceManager/config"
 	"github.com/NamespaceManager/docs"
-	"github.com/NamespaceManager/internal/utils"
 	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -80,9 +79,6 @@ func (s *App) Run() error {
 	// Initialize mTLS client for outbound requests to glidelet/resource controllers
 	if err := httpclient.InitMTLSClient(); err != nil {
 		log.Fatalf("Failed to initialize mTLS client: %v", err)
-	}
-	if err := utils.InitMTLSClient(); err != nil {
-		log.Fatalf("Failed to initialize utils mTLS client: %v", err)
 	}
 
 	// Serve Swagger UI

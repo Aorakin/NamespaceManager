@@ -2,71 +2,22 @@ package utils
 
 import (
 	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
 	"time"
+
+	"github.com/NamespaceManager/pkg/httpclient"
 )
 
 var client = &http.Client{Timeout: 10 * time.Second}
-var mtlsClient *http.Client
-
-// InitMTLSClient initializes the mTLS client for utils package
-func InitMTLSClient() error {
-	certPath := os.Getenv("TLS_CERT_PATH")
-	keyPath := os.Getenv("TLS_KEY_PATH")
-	caCertPath := os.Getenv("MTLS_CA_CERT_PATH")
-
-	if certPath == "" || keyPath == "" {
-		log.Println("utils mTLS client disabled: TLS_CERT_PATH or TLS_KEY_PATH not set")
-		mtlsClient = client
-		return nil
-	}
-
-	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return err
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
-	}
-
-	if caCertPath != "" {
-		caCert, err := os.ReadFile(caCertPath)
-		if err != nil {
-			log.Printf("Warning: Failed to read CA certificate: %v", err)
-		} else {
-			caCertPool := x509.NewCertPool()
-			if caCertPool.AppendCertsFromPEM(caCert) {
-				tlsConfig.RootCAs = caCertPool
-			} else {
-				log.Println("Warning: Failed to parse CA certificate")
-			}
-		}
-	}
-
-	mtlsClient = &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
-	log.Println("utils mTLS client initialized successfully")
-	return nil
-}
 
 // getClient returns the appropriate HTTP client
+// Uses httpclient.MTLSClient if available (mTLS-enabled), otherwise falls back to regular client
 func getClient() *http.Client {
-	if mtlsClient != nil {
-		return mtlsClient
+	if httpclient.MTLSClient != nil {
+		return httpclient.MTLSClient
 	}
 	return client
 }

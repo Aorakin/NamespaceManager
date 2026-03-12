@@ -56,10 +56,12 @@ ticketGroup.POST("/updateTicketStatusFromGlidelet", middleware.MTLSMiddleware(),
 
 The service automatically presents its client certificate when making requests to external services:
 
-1. During application startup, `httpclient.InitMTLSClient()` and `utils.InitMTLSClient()` are called
-2. These functions load the client certificate from `TLS_CERT_PATH` and `TLS_KEY_PATH`
-3. An HTTP client with TLS configuration is created
-4. All requests made via `httpclient.SendRequest()` and `utils.SendRequest()` use this mTLS-enabled client
+1. During application startup, `httpclient.InitMTLSClient()` is called
+2. This function loads the client certificate from `TLS_CERT_PATH` and `TLS_KEY_PATH`
+3. An HTTP client with TLS configuration is created and stored in `httpclient.MTLSClient`
+4. All requests made via `httpclient.SendRequest()` and `utils.SendRequest()` use this shared mTLS-enabled client
+
+**Note**: The `utils` package delegates to `httpclient.MTLSClient` to avoid duplication. There's only one mTLS client initialization.
 
 ## Affected Services
 
