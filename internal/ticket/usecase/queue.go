@@ -18,7 +18,7 @@ func (u *TicketUsecase) allNodesHaveHeadTasks(ticketsByPool map[uuid.UUID][]dtos
 		nodeNames := u.getNodeNames(poolTickets)
 		headTasks, err := u.ticketRepository.GetHeadTasksByPoolAndNodes(poolID, nodeNames)
 		if err != nil {
-			return false, fmt.Errorf("failed to get head tasks for pool %s: %w", poolID, err)
+			return false, fmt.Errorf("failed to check task queue for pool %s: %w", poolID, err)
 		}
 
 		for _, nodeName := range nodeNames {
@@ -49,7 +49,8 @@ func (u *TicketUsecase) tryBackfillTask(ticketsByPool map[uuid.UUID][]dtos.Ticke
 		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
 		log.Printf("[BACKFILL TASK] PoolID: %s, PoolURN: %s", poolID, poolURN)
 		if err != nil {
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			log.Printf("failed to get pool URN for pool %s: %v", poolID, err)
+			return time.Time{}, apiError.NewInternalServerError("Failed to connect to resource pool")
 		}
 
 		url := poolURN + "/api/v1/ticket/backFillJobs"
@@ -97,7 +98,8 @@ func (u *TicketUsecase) fallBackQueueTask(ticketsByPool map[uuid.UUID][]dtos.Tic
 		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
 		log.Printf("[FALLBACK QUEUE TASK] PoolID: %s, PoolURN: %s", poolID, poolURN)
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			log.Printf("failed to get pool URN for pool %s: %v", poolID, err)
+			return apiError.NewInternalServerError("Failed to connect to resource pool")
 		}
 
 		var ticketIDs []uuid.UUID
@@ -110,7 +112,8 @@ func (u *TicketUsecase) fallBackQueueTask(ticketsByPool map[uuid.UUID][]dtos.Tic
 
 		_, err = httpclient.SendRequest(url, payload, "PATCH")
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
+			log.Printf("failed to cancel tickets in pool %s: %v", poolID, err)
+			return apiError.NewInternalServerError("Failed to process task scheduling")
 		}
 	}
 	return nil
@@ -121,7 +124,7 @@ func (u *TicketUsecase) queueHeadTask(ticketsByPool map[uuid.UUID][]dtos.TicketR
 	log.Printf("[ENQUEUE TASK] Negotiated start time: %s", startTime.String())
 	if err != nil {
 		log.Printf("[ENQUEUE TASK] Negotiated return with ERROR : %s", err.Error())
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: %s", err.Error()))
+		return time.Time{}, apiError.NewInternalServerError("Failed to schedule task, please try again")
 	}
 
 	log.Printf("[ENQUEUE TASK] Negotiated start time: %s", startTime.String())
@@ -133,7 +136,8 @@ func (u *TicketUsecase) queueHeadTask(ticketsByPool map[uuid.UUID][]dtos.TicketR
 
 	err = u.insertQueue(ticketsByPool, startTime)
 	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to insert tickets into queue: %s", err.Error()))
+		log.Printf("failed to insert tickets into queue: %v", err)
+		return time.Time{}, apiError.NewInternalServerError("Failed to queue task, please try again")
 	}
 
 	log.Printf("[ENQUEUE TASK] Insert queue to database, total pool: %d, start time %s", len(ticketsByPool), startTime.String())
@@ -183,7 +187,7 @@ func (u *TicketUsecase) enqueueTask(ticketsByPool map[uuid.UUID][]dtos.TicketReq
 	isTrue, err := u.allNodesHaveHeadTasks(ticketsByPool)
 	log.Printf("[ENQUEUE TASK] all node have head tasks: %v", isTrue)
 	if err != nil {
-		return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to get head task: %s", err.Error()))
+		return time.Time{}, apiError.NewInternalServerError("Failed to process task scheduling")
 	}
 
 	if !isTrue {
@@ -285,7 +289,7 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 			if err := u.fallBackQueueTask(ticketsByPool); err != nil {
 				log.Printf("[NEGOTIATE START TIME] Fallback failed: %v", err)
 			}
-			return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time: pool returned error"))
+			return time.Time{}, apiError.NewInternalServerError("Failed to schedule task, please try again")
 		}
 
 		// Find latest time and check if all pools agree
@@ -321,7 +325,7 @@ func (u *TicketUsecase) negotiateStartTime(ticketsByPool map[uuid.UUID][]dtos.Ti
 	if err := u.fallBackQueueTask(ticketsByPool); err != nil {
 		log.Printf("[NEGOTIATE START TIME] Final fallback failed: %v", err)
 	}
-	return time.Time{}, apiError.NewInternalServerError(fmt.Errorf("failed to negotiate start time after %d iterations", maxIterations))
+	return time.Time{}, apiError.NewInternalServerError("Failed to schedule task after multiple attempts, please try again")
 }
 
 // requeue handles re-enqueuing tasks associated with freed nodes.

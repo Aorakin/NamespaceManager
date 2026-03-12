@@ -19,7 +19,8 @@ import (
 func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 	tasks, err := u.ticketRepository.GetTasks(ownerID)
 	if err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get tasks: %w", err))
+		log.Printf("failed to get tasks: %v", err)
+		return nil, apiError.NewInternalServerError("Failed to retrieve tasks")
 	}
 
 	return tasks, nil
@@ -28,7 +29,8 @@ func (u *TicketUsecase) GetTasks(ownerID uuid.UUID) ([]models.Task, error) {
 func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.UUID) error {
 	tickets, err := u.ticketRepository.GetTicketsByGliderTicketIDs(request.Tickets)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
+		log.Printf("failed to retrieve tickets: %v", err)
+		return apiError.NewInternalServerError("Failed to retrieve tickets")
 	}
 
 	namespaceID := uuid.Nil
@@ -37,14 +39,14 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 		if namespaceID == uuid.Nil {
 			namespaceID = ticket.NamespaceID
 		} else if ticket.NamespaceID != namespaceID {
-			return apiError.NewBadRequestError(fmt.Errorf("all tickets must belong to the same namespace"))
+			return apiError.NewBadRequestError("All tickets must belong to the same namespace")
 		}
 
 		if ticket.Status != models.StatusReady {
-			return apiError.NewBadRequestError(fmt.Errorf("ticket %s is not in 'Ready' status", ticket.GliderTicket.ID))
+			return apiError.NewBadRequestError("One or more tickets are not in 'Ready' status")
 		}
 		if ticket.OwnerID != userID {
-			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to the user", ticket.GliderTicket.ID))
+			return apiError.NewForbiddenError("You do not have permission to use one or more tickets")
 		}
 	}
 
@@ -92,10 +94,11 @@ func (u *TicketUsecase) CreateTask(request *dtos.CreateTaskRequest, userID uuid.
 func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to get task by ID: %w", err))
+		log.Printf("failed to get task by ID %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to find the task")
 	}
 	if task.OwnerID != userID {
-		return apiError.NewForbiddenError(fmt.Errorf("user does not own the task"))
+		return apiError.NewForbiddenError("You do not have permission to cancel this task")
 	}
 
 	// Group tickets by resource pool
@@ -123,7 +126,7 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 	for poolID, info := range ticketsByPool {
 		poolURL, err := u.getPoolURN(poolID.String(), info.defaultURL)
 		if err != nil {
-			cancelErrors = append(cancelErrors, fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			cancelErrors = append(cancelErrors, fmt.Errorf("pool %s URN: %w", poolID, err))
 			continue
 		}
 
@@ -132,7 +135,7 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 
 		_, err = httpclient.SendRequest(url, payload, "PATCH")
 		if err != nil {
-			cancelErrors = append(cancelErrors, fmt.Errorf("failed to cancel tickets in pool %s: %w", poolID, err))
+			cancelErrors = append(cancelErrors, fmt.Errorf("pool %s cancel: %w", poolID, err))
 			continue
 		}
 
@@ -144,30 +147,35 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 
 	// If any cancellation failed, return error without updating status or deleting task
 	if len(cancelErrors) > 0 {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to cancel all tickets: %v", cancelErrors))
+		log.Printf("failed to cancel all tickets: %v", cancelErrors)
+		return apiError.NewInternalServerError("Failed to cancel all tickets, some resources may still be active")
 	}
 
 	// All cancellations succeeded, now proceed with cleanup
 	if len(statusUpdates) > 0 {
 		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+			log.Printf("failed to batch update ticket statuses: %v", err)
+			return apiError.NewInternalServerError("Failed to update ticket statuses")
 		}
 	}
 
 	err = u.ticketRepository.DeleteQueue(taskID)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to delete queue: %w", err))
+		log.Printf("failed to delete queue for task %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to clean up task queue")
 	}
 
 	// Update task status to cancelled before deletion
 	err = u.ticketRepository.UpdateTaskStatus(taskID, models.StatusCancelled)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to update task status: %w", err))
+		log.Printf("failed to update task status for task %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to update task status")
 	}
 
 	err = u.ticketRepository.DeleteTask(taskID)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to delete task: %w", err))
+		log.Printf("failed to delete task %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to delete task")
 	}
 
 	u.requeue(u.getNodeNamesByTickets(task.Tickets))
@@ -178,10 +186,11 @@ func (u *TicketUsecase) CancelTask(userID uuid.UUID, taskID uuid.UUID) error {
 func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{}, error) {
 	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get task by ID: %w", err))
+		log.Printf("failed to get task by ID %s: %v", taskID, err)
+		return nil, apiError.NewInternalServerError("Failed to find the task")
 	}
 	if task.OwnerID != userID {
-		return nil, apiError.NewForbiddenError(fmt.Errorf("user does not own the task"))
+		return nil, apiError.NewForbiddenError("You do not have permission to stop this task")
 	}
 
 	ticketsByPool, err := u.groupTicketByPool(task.Tickets)
@@ -194,7 +203,8 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID, poolTickets[0].GlideletURN)
 		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			log.Printf("failed to get pool URN for pool %s: %v", poolID, err)
+			return nil, apiError.NewInternalServerError("Failed to connect to resource pool")
 		}
 
 		url := poolURN + "/api/v1/ticket/deletePods"
@@ -205,12 +215,14 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 
 		body, err := httpclient.SendRequest(url, payload, "POST")
 		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to stop tickets in pool %s: %w", poolID, err))
+			log.Printf("failed to stop tickets in pool %s: %v", poolID, err)
+			return nil, apiError.NewInternalServerError("Failed to stop tickets in resource pool")
 		}
 
 		var response []dtos.StopTaskResponse
 		if err := json.Unmarshal(body, &response); err != nil {
-			return nil, apiError.NewBadRequestError(fmt.Errorf("failed to parse stop task response from pool %s: %w", poolID, err))
+			log.Printf("failed to parse stop task response from pool %s: %v", poolID, err)
+			return nil, apiError.NewInternalServerError("Failed to process stop task response")
 		}
 
 		for _, res := range response {
@@ -227,7 +239,8 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 	if len(statusUpdates) > 0 {
 		log.Printf("[STOP TASK] Updating ticket statuses: %v", statusUpdates)
 		if err := u.ticketRepository.BatchUpdateTicketStatuses(statusUpdates); err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to batch update ticket statuses: %w", err))
+			log.Printf("failed to batch update ticket statuses: %v", err)
+			return nil, apiError.NewInternalServerError("Failed to update ticket statuses")
 		}
 	}
 
@@ -256,7 +269,8 @@ func (u *TicketUsecase) confirmTickets(ticketsByPool map[uuid.UUID][]dtos.Ticket
 	for poolID, poolTickets := range ticketsByPool {
 		poolURN, err := u.getPoolURN(poolID.String(), poolTickets[0].GlideletURN)
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get pool URN for pool %s: %w", poolID, err))
+			log.Printf("failed to get pool URN for pool %s: %v", poolID, err)
+			return apiError.NewInternalServerError("Failed to connect to resource pool")
 		}
 
 		request := dtos.StopTaskTickets{
@@ -269,7 +283,8 @@ func (u *TicketUsecase) confirmTickets(ticketsByPool map[uuid.UUID][]dtos.Ticket
 		url := poolURN + "/api/v1/ticket/confirmJobs"
 		_, err = httpclient.SendRequest(url, request, "PATCH")
 		if err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to get code server info from pool %s: %w", poolID, err))
+			log.Printf("failed to confirm tickets with pool %s: %v", poolID, err)
+			return apiError.NewInternalServerError("Failed to confirm tickets with resource pool")
 		}
 	}
 
@@ -282,7 +297,8 @@ func (u *TicketUsecase) groupTicketIDsByPool(ticketIDs []uuid.UUID) (map[uuid.UU
 	for _, gliderTicketID := range ticketIDs {
 		ticketReq, err := u.toTicketRequest(gliderTicketID)
 		if err != nil {
-			return nil, apiError.NewInternalServerError(fmt.Errorf("failed to convert ticket to ticket request: %w", err))
+			log.Printf("failed to convert ticket to ticket request: %v", err)
+			return nil, apiError.NewInternalServerError("Failed to process ticket")
 		}
 
 		poolID := ticketReq.Spec.PoolID
@@ -329,12 +345,14 @@ func (u *TicketUsecase) getPoolURN(poolID string, defaultURL string) (string, er
 func (u *TicketUsecase) toTicketRequest(ticketID uuid.UUID) (*dtos.TicketReq, error) {
 	ticket, err := u.ticketRepository.GetTicketByGliderTicketID(ticketID)
 	if err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to get ticket by GliderTicketID: %w", err))
+		log.Printf("failed to get ticket by GliderTicketID %s: %v", ticketID, err)
+		return nil, apiError.NewInternalServerError("Failed to retrieve ticket")
 	}
 
 	ticketReq, err := mapper.ToTicketRequest(ticket)
 	if err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to convert ticket to ticket request: %w", err))
+		log.Printf("failed to convert ticket to ticket request: %v", err)
+		return nil, apiError.NewInternalServerError("Failed to process ticket")
 	}
 
 	return ticketReq, nil
@@ -344,17 +362,19 @@ func (u *TicketUsecase) DeleteTasks(request dtos.DeleteTasksRequest, userID uuid
 	// validate tickets belong to user
 	tickets, err := u.ticketRepository.GetTasksByIDs(request.TaskIDs)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets: %w", err))
+		log.Printf("failed to retrieve tasks: %v", err)
+		return apiError.NewInternalServerError("Failed to retrieve tasks")
 	}
 	for _, ticket := range tickets {
 		if ticket.OwnerID != userID {
-			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to user", ticket.ID))
+			return apiError.NewForbiddenError("You do not have permission to delete one or more tasks")
 		}
 	}
 
 	// delete tickets
 	if err := u.ticketRepository.DeleteTasksByIDs(request.TaskIDs); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to delete tickets: %w", err))
+		log.Printf("failed to delete tasks: %v", err)
+		return apiError.NewInternalServerError("Failed to delete tasks, please try again")
 	}
 	return nil
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/NamespaceManager/internal/users/dtos"
 	"github.com/NamespaceManager/internal/users/interfaces"
 	"github.com/NamespaceManager/internal/utils"
+	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/response"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -39,7 +41,7 @@ func (h *UsersHandlers) Me() gin.HandlerFunc {
 		userData["username"] = firstName + " " + lastName
 		userData["email"] = email
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Please log in to continue")))
 			return
 		}
 		c.JSON(http.StatusOK, userData)
@@ -57,13 +59,14 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
 		if code == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No code provided"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Authorization code is required")))
 			return
 		}
 
 		userInfo, err := h.usersUsecase.HandleGoogleCallback(code, c)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to handle callback"})
+			log.Printf("failed to handle Google callback: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to complete sign-in")))
 			return
 		}
 
@@ -76,7 +79,7 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 				err = session.Save()
 				if err != nil {
 					log.Printf("Session save failed: %+v", err)
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Session save failed"})
+					c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to save session")))
 					return
 				}
 
@@ -113,19 +116,19 @@ func (h *UsersHandlers) Register() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var registerInput dtos.RegisterInput
 		if err := c.ShouldBindJSON(&registerInput); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid input")))
 			return
 		}
 		if err := utils.CheckValidater(registerInput); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid input format")))
 			return
 		}
 
 		if err := h.usersUsecase.Register(registerInput); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewConflictError("Username is already taken")))
 			return
 		}
-		c.JSON(http.StatusCreated, gin.H{"message": "registered successfully"})
+		c.JSON(http.StatusCreated, gin.H{"message": "Registered successfully"})
 	}
 }
 
@@ -147,7 +150,7 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 		password := c.PostForm("password")
 		user, err := h.usersUsecase.Login(username, password)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid username or password"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid username or password")))
 			return
 		}
 
@@ -156,7 +159,7 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 		err = session.Save()
 		if err != nil {
 			log.Printf("Session save failed: %+v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"Session save failed": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to save session")))
 			return
 		}
 
@@ -204,40 +207,45 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/callback/google?" + rawQuery
 		status, body, err := utils.SendRequest(url, nil, "GET")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("failed to get access token from code: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to complete authentication")))
 			return
 		}
 		if status != http.StatusOK {
-			c.JSON(status, gin.H{"error": string(body)})
+			log.Printf("auth service returned status %d: %s", status, string(body))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewApiError(status, "Authentication failed", "Failed to authenticate, please try again")))
 			return
 		}
 		var token map[string]interface{}
 		if err := json.Unmarshal(body, &token); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token"})
+			log.Printf("failed to parse token response: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to process authentication response")))
 			return
 		}
 
 		accessToken, ok := token["access_token"].(string)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve access token")))
 			return
 		}
 		refreshToken, ok := token["refresh_token"].(string)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Refresh token not found"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve refresh token")))
 			return
 		}
 
 		userID, firstName, lastName, email, err := auth.ExtractDataFromToken(accessToken)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract user data from token"})
+			log.Printf("failed to extract user data from token: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to process user information")))
 			return
 		}
 		log.Printf("UserID: %s, FirstName: %s, LastName: %s, Email: %s", userID, firstName, lastName, email)
 
 		_, err = h.usersUsecase.FindOrCreateUser(userID, email, firstName, lastName)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find or create user"})
+			log.Printf("failed to find or create user: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to set up user account")))
 			return
 		}
 
@@ -252,28 +260,31 @@ func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		refreshTokenCookie, err := c.Cookie("refresh_token")
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Session expired, please log in again")))
 			return
 		}
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/auth/refresh-token"
 		status, body, err := utils.SendRequestWithAccessToken(url, nil, "GET", refreshTokenCookie)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("failed to refresh access token: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to refresh session")))
 			return
 		}
 		if status != http.StatusOK {
-			c.JSON(status, gin.H{"error": string(body)})
+			log.Printf("auth service returned status %d: %s", status, string(body))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewApiError(status, "Session refresh failed", "Failed to refresh session, please log in again")))
 			return
 		}
 		var token map[string]interface{}
 		if err := json.Unmarshal(body, &token); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token"})
+			log.Printf("failed to parse token response: %v", err)
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to process session data")))
 			return
 		}
 
 		accessToken, ok := token["access_token"].(string)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve new access token")))
 			return
 		}
 		// c.SetCookie("access_token", accessToken, 3600, "/", "localhost", true, true)

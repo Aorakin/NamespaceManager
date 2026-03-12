@@ -151,7 +151,8 @@ func (u *TicketUsecase) computeTicketStatus(podStatuses []dtos.PodStatus) models
 func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID, true)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets by task ID: %w", err))
+		log.Printf("failed to get tickets by task ID %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to retrieve task tickets")
 	}
 
 	if len(tickets) == 0 {
@@ -160,7 +161,8 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 
 	task, err := u.ticketRepository.GetTasksByID(taskID)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to get task: %w", err))
+		log.Printf("failed to get task %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to retrieve task")
 	}
 
 	var (
@@ -190,7 +192,8 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 	// update task start time
 	if allRedeemed && task.StartedAt == nil {
 		if err := u.ticketRepository.UpdateTaskStartTime(taskID, time.Now()); err != nil {
-			return apiError.NewInternalServerError(fmt.Errorf("failed to update task start time: %w", err))
+			log.Printf("failed to update task start time for task %s: %v", taskID, err)
+			return apiError.NewInternalServerError("Failed to update task start time")
 		}
 	}
 
@@ -207,7 +210,7 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 		default:
 			if err := u.clusterRollback(taskID); err != nil {
 				log.Printf("[UPDATE TASK STATUS] Cluster rollback failed for task %s: %v", taskID, err)
-				return apiError.NewInternalServerError(fmt.Errorf("failed to rollback cluster: %w", err))
+				return apiError.NewInternalServerError("Failed to rollback task resources")
 			}
 			taskStatus = models.StatusFailed
 		}
@@ -231,7 +234,8 @@ func (u *TicketUsecase) updateTaskStatus(taskID uuid.UUID) error {
 func (u *TicketUsecase) clusterRollback(taskID uuid.UUID) error {
 	tickets, err := u.ticketRepository.GetTicketsByTaskID(taskID, true)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to get tickets for cluster rollback: %w", err))
+		log.Printf("failed to get tickets for cluster rollback of task %s: %v", taskID, err)
+		return apiError.NewInternalServerError("Failed to retrieve tickets for rollback")
 	}
 
 	// 1. Rollback actual cluster resources
@@ -301,7 +305,8 @@ func (u *TicketUsecase) rollbackClusterResources(tickets []models.Ticket) error 
 
 	ticketsByPool, err := u.groupTicketByPool(tickets)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to group ticket IDs by pool: %w", err))
+		log.Printf("failed to group tickets by pool for rollback: %v", err)
+		return apiError.NewInternalServerError("Failed to process rollback")
 	}
 
 	for poolID, poolTickets := range ticketsByPool {

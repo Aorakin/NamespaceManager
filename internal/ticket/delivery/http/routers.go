@@ -14,7 +14,6 @@ func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.Tick
 	ticketGroup.POST("/handleticket", ticketHandler.HandleTicketCallback())
 
 	// ticket
-
 	ticketGroup.POST("/requestTicketToCH", ticketHandler.RequestTicket())
 	ticketGroup.GET("/cancelTicket/:ticket_id", ticketHandler.CancelTicket())
 	ticketGroup.GET("/getUserTickets", ticketHandler.GetUserTickets())

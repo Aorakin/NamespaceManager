@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"slices"
@@ -24,7 +24,8 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 
 	var gliderTicket dtos.GliderTicketResponse
 	if err := json.Unmarshal(res, &gliderTicket); err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to unmarshal glider ticket response: %w", err))
+		log.Printf("failed to unmarshal glider ticket response: %v", err)
+		return nil, apiError.NewInternalServerError("Failed to process ticket response from server")
 	}
 
 	ticket := models.Ticket{
@@ -42,7 +43,8 @@ func (u *TicketUsecase) RequestTicket(request dtos.RequestTicketDTO, accessToken
 	}
 
 	if err := u.ticketRepository.Create(&ticket); err != nil {
-		return nil, apiError.NewInternalServerError(fmt.Errorf("failed to save ticket: %w", err))
+		log.Printf("failed to save ticket: %v", err)
+		return nil, apiError.NewInternalServerError("Failed to save ticket, please try again")
 	}
 
 	return &gliderTicket, nil
@@ -68,7 +70,8 @@ func (u *TicketUsecase) CancelTicket(ticketID string, accessToken string) error 
 	}
 
 	if err := u.ticketRepository.CancelTicket(ticketID); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to cancel ticket: %w", err))
+		log.Printf("failed to cancel ticket %s: %v", ticketID, err)
+		return apiError.NewInternalServerError("Failed to cancel ticket, please try again")
 	}
 	return nil
 }
@@ -77,22 +80,24 @@ func (u *TicketUsecase) DeleteTickets(request dtos.DeleteTicketsRequest, userID 
 	// validate ownership
 	tickets, err := u.ticketRepository.GetTicketsByIDs(request.TicketIDs)
 	if err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to retrieve tickets: %w", err))
+		log.Printf("failed to retrieve tickets: %v", err)
+		return apiError.NewInternalServerError("Failed to retrieve tickets")
 	}
 
 	for _, ticket := range tickets {
 		if ticket.OwnerID != userID {
-			return apiError.NewForbiddenError(fmt.Errorf("ticket %s does not belong to the user", ticket.ID))
+			return apiError.NewForbiddenError("You do not have permission to delete this ticket")
 		}
 
 		if !slices.Contains(models.UneditableStatus, ticket.Status) {
-			return apiError.NewBadRequestError(fmt.Errorf("ticket %s cannot be deleted in its current status", ticket.ID))
+			return apiError.NewBadRequestError("One or more tickets cannot be deleted in their current status")
 		}
 	}
 
 	// proceed to delete
 	if err := u.ticketRepository.DeleteTicketsByIDs(request.TicketIDs); err != nil {
-		return apiError.NewInternalServerError(fmt.Errorf("failed to delete tickets: %w", err))
+		log.Printf("failed to delete tickets: %v", err)
+		return apiError.NewInternalServerError("Failed to delete tickets, please try again")
 	}
 
 	return nil

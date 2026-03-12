@@ -22,10 +22,11 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/NamespaceManager/internal/auth"
+	apiError "github.com/NamespaceManager/pkg/api_error"
+	"github.com/NamespaceManager/pkg/response"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -50,7 +51,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			var err error
 			accessToken, err = c.Cookie("access_token")
 			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"message": "missing access token"})
+				c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Missing access token")))
 				c.Abort()
 				return
 			}
@@ -66,7 +67,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid or expired access token"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid or expired access token")))
 			c.Abort()
 			return
 		}
@@ -74,7 +75,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 4. Extract claims
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid token claims"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid token")))
 			c.Abort()
 			return
 		}
@@ -82,14 +83,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 5. Extract user info
 		userIDStr, ok := claims["user_id"].(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid user_id in token"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid token")))
 			c.Abort()
 			return
 		}
 
 		userID, err := uuid.Parse(userIDStr)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid user_id format"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid token")))
 			c.Abort()
 			return
 		}
@@ -99,7 +100,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		email, _ := claims["email"].(string)
 
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "missing user_id in token"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Invalid token")))
 			c.Abort()
 			return
 		}

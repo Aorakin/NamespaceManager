@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -28,15 +27,15 @@ func (h *TicketHandlers) HandleTicketCallback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ticketreq dtos.CreateTicket
 		if err := c.ShouldBindJSON(&ticketreq); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid request body")))
 			return
 		}
 		userid := utils.GetSession(c, "userID").(uuid.UUID)
 		if err := h.ticketUsecase.HandleTicketCallback(ticketreq, userid); err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
-		c.JSON(http.StatusOK, "Ticket Created")
+		c.JSON(http.StatusOK, gin.H{"message": "Ticket created"})
 	}
 }
 
@@ -45,7 +44,7 @@ func (h *TicketHandlers) GetTasks() gin.HandlerFunc {
 		ownerID := c.MustGet("userID").(uuid.UUID)
 		tasks, err := h.ticketUsecase.GetTasks(ownerID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"tasks": tasks})
@@ -57,24 +56,24 @@ func (h *TicketHandlers) StopTask() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Please log in to continue")))
 			return
 		}
 
 		taskIDParam := c.Param("task_id")
 		taskUUID, err := uuid.Parse(taskIDParam)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task_id"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid task ID")))
 			return
 		}
 
-		response, err := h.ticketUsecase.StopTask(userID, taskUUID)
+		result, err := h.ticketUsecase.StopTask(userID, taskUUID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
 
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, result)
 	}
 }
 
@@ -84,7 +83,7 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 
 		var request dtos.CreateTaskRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid request body")))
 			return
 		}
 
@@ -93,7 +92,7 @@ func (h *TicketHandlers) UseTickets() gin.HandlerFunc {
 			c.JSON(response.ErrorResponseBuilder(err))
 			return
 		}
-		c.JSON(http.StatusOK, "task created")
+		c.JSON(http.StatusOK, gin.H{"message": "Task created"})
 	}
 }
 
@@ -105,7 +104,7 @@ func (h *TicketHandlers) RequestTicket() gin.HandlerFunc {
 
 		var request dtos.RequestTicketDTO
 		if err := c.ShouldBindJSON(&request); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid input")))
 			return
 		}
 
@@ -126,13 +125,13 @@ func (h *TicketHandlers) GetTicketByNamespaceID() gin.HandlerFunc {
 
 		namespaceUUID, err := uuid.Parse(namespaceID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid namespace_id: %w", err))))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid namespace ID")))
 			return
 		}
 
 		tickets, err := h.ticketUsecase.GetTicketByNamespaceID(namespaceUUID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve tickets")))
 			return
 		}
 		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
@@ -146,19 +145,19 @@ func (h *TicketHandlers) GetTicketByNamespaceIDAndNodeID() gin.HandlerFunc {
 
 		namespaceUUID, err := uuid.Parse(namespaceID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid namespace_id: %w", err))))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid namespace ID")))
 			return
 		}
 
 		nodeUUID, err := uuid.Parse(nodeID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("invalid node_id: %w", err))))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid node ID")))
 			return
 		}
 
 		tickets, err := h.ticketUsecase.GetTicketByNamespaceIDAndNodeID(namespaceUUID, nodeUUID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve tickets")))
 			return
 		}
 		c.JSON(http.StatusOK, mapper.ToUserTicketResponseList(tickets))
@@ -171,7 +170,7 @@ func (h *TicketHandlers) GetUserTickets() gin.HandlerFunc {
 
 		tickets, err := h.ticketUsecase.GetUserTickets(userID)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewInternalServerError("Failed to retrieve tickets")))
 			return
 		}
 
@@ -206,7 +205,7 @@ func (h *TicketHandlers) CancelTicket() gin.HandlerFunc {
 		accessToken := c.MustGet("accessToken").(string)
 
 		if ticketId == "" {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(fmt.Errorf("ticket_id is required"))))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Ticket ID is required")))
 			return
 		}
 
@@ -223,14 +222,14 @@ func (h *TicketHandlers) CancelTask() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Please log in to continue")))
 			return
 		}
 
 		taskIDParam := c.Param("task_id")
 		taskUUID, err := uuid.Parse(taskIDParam)
 		if err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("invalid task_id")))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid task ID")))
 			return
 		}
 
@@ -248,13 +247,13 @@ func (h *TicketHandlers) DeleteTickets() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Please log in to continue")))
 			return
 		}
 
 		var req dtos.DeleteTicketsRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid request body")))
 			return
 		}
 
@@ -271,13 +270,13 @@ func (h *TicketHandlers) DeleteTasks() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.MustGet("userID").(uuid.UUID)
 		if userID == uuid.Nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(response.ErrorResponseBuilder(apiError.NewUnauthorizedError("Please log in to continue")))
 			return
 		}
 
 		var req dtos.DeleteTasksRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError(err)))
+			c.JSON(response.ErrorResponseBuilder(apiError.NewBadRequestError("Invalid request body")))
 			return
 		}
 
