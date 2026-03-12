@@ -23,7 +23,8 @@ func SendRequestWithAccessToken(url string, payload interface{}, method string, 
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 	}
 
-	resp, err := client.Do(req)
+	httpClient := getClient()
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to send request: %w", err)
 	}

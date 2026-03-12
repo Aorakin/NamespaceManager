@@ -1,13 +1,19 @@
 package app
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/NamespaceManager/config"
 	"github.com/NamespaceManager/docs"
+	"github.com/NamespaceManager/internal/utils"
+	"github.com/NamespaceManager/pkg/httpclient"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -71,8 +77,46 @@ func (s *App) Run() error {
 		return err
 	}
 
+	// Initialize mTLS client for outbound requests to glidelet/resource controllers
+	if err := httpclient.InitMTLSClient(); err != nil {
+		log.Fatalf("Failed to initialize mTLS client: %v", err)
+	}
+	if err := utils.InitMTLSClient(); err != nil {
+		log.Fatalf("Failed to initialize utils mTLS client: %v", err)
+	}
+
 	// Serve Swagger UI
 	s.gin.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	if os.Getenv("MTLS_ENABLED") == "true" {
+		caCert, err := os.ReadFile(os.Getenv("MTLS_CA_CERT_PATH"))
+		if err != nil {
+			log.Fatalf("Failed to read CA certificate: %v", err)
+		}
+
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			log.Fatal("Failed to parse CA certificate")
+		}
+
+		tlsConfig := &tls.Config{
+			ClientCAs:  caCertPool,
+			ClientAuth: tls.VerifyClientCertIfGiven,
+			MinVersion: tls.VersionTLS12,
+		}
+
+		server := &http.Server{
+			Addr:      ":8080",
+			Handler:   s.gin,
+			TLSConfig: tlsConfig,
+		}
+
+		log.Println("Starting server with mTLS support on :8080")
+		return server.ListenAndServeTLS(
+			os.Getenv("TLS_CERT_PATH"),
+			os.Getenv("TLS_KEY_PATH"),
+		)
+	}
 
 	serverURL := fmt.Sprintf(":%s", "8080")
 	return s.gin.Run(serverURL)

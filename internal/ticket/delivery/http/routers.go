@@ -7,8 +7,8 @@ import (
 )
 
 func MapTicketRoutes(ticketGroup *gin.RouterGroup, ticketHandler interfaces.TicketHandler) {
-	// glidelet
-	ticketGroup.POST("/updateTicketStatusFromGlidelet", ticketHandler.UpdateTicketStatusFromGlidelet())
+	// glidelet (mTLS protected)
+	ticketGroup.POST("/updateTicketStatusFromGlidelet", middleware.MTLSMiddleware(), ticketHandler.UpdateTicketStatusFromGlidelet())
 
 	ticketGroup.Use(middleware.AuthMiddleware())
 	ticketGroup.POST("/handleticket", ticketHandler.HandleTicketCallback())

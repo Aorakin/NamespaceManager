@@ -2,10 +2,13 @@ package httpclient
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	apiError "github.com/NamespaceManager/pkg/api_error"
@@ -14,6 +17,70 @@ import (
 // Client is a wrapper around http.Client with default timeout
 var Client = &http.Client{
 	Timeout: 30 * time.Second,
+}
+
+// MTLSClient is an HTTP client configured with client certificates for mutual TLS
+var MTLSClient *http.Client
+
+// InitMTLSClient initializes the mTLS client with client certificates
+// This should be called during application startup if mTLS is enabled
+func InitMTLSClient() error {
+	// Load client certificate and key
+	certPath := os.Getenv("TLS_CERT_PATH")
+	keyPath := os.Getenv("TLS_KEY_PATH")
+	caCertPath := os.Getenv("MTLS_CA_CERT_PATH")
+
+	if certPath == "" || keyPath == "" {
+		log.Println("mTLS client disabled: TLS_CERT_PATH or TLS_KEY_PATH not set")
+		MTLSClient = Client // Fallback to regular client
+		return nil
+	}
+
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return err
+	}
+
+	// Load CA cert pool (for verifying server certificates)
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+
+	// If CA cert is provided, use it to verify server certificates
+	if caCertPath != "" {
+		caCert, err := os.ReadFile(caCertPath)
+		if err != nil {
+			log.Printf("Warning: Failed to read CA certificate: %v", err)
+		} else {
+			caCertPool := x509.NewCertPool()
+			if caCertPool.AppendCertsFromPEM(caCert) {
+				tlsConfig.RootCAs = caCertPool
+			} else {
+				log.Println("Warning: Failed to parse CA certificate")
+			}
+		}
+	}
+
+	MTLSClient = &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
+	log.Println("mTLS client initialized successfully")
+	return nil
+}
+
+// getClient returns the appropriate HTTP client
+// Uses MTLSClient if available and initialized, otherwise falls back to regular Client
+func getClient() *http.Client {
+	if MTLSClient != nil {
+		return MTLSClient
+	}
+	return Client
 }
 
 // SendRequest sends an HTTP request without authentication
@@ -38,8 +105,9 @@ func SendRequest(url string, payload interface{}, method string) ([]byte, error)
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 
-	// Execute request
-	resp, err := Client.Do(req)
+	// Execute request using the appropriate client (mTLS if available)
+	client := getClient()
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, apiError.NewServiceUnavailableError("failed to connect to external service")
 	}
@@ -83,8 +151,9 @@ func SendRequestWithAccessToken(url string, payload interface{}, method string, 
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 	}
 
-	// Execute request
-	resp, err := Client.Do(req)
+	// Execute request using the appropriate client (mTLS if available)
+	client := getClient()
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, apiError.NewServiceUnavailableError("failed to connect to external service")
 	}
