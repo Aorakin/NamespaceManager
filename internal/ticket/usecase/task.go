@@ -207,6 +207,7 @@ func (u *TicketUsecase) StopTask(userID uuid.UUID, taskID uuid.UUID) (interface{
 			return nil, apiError.NewInternalServerError("Failed to connect to resource pool")
 		}
 
+		log.Printf("reuquest to stop task %s sent to pool %s at URN %s", taskID, poolID, poolURN)
 		url := poolURN + "/api/v1/ticket/deletePods"
 		payload := dtos.StopTaskTickets{TicketIDs: []uuid.UUID{}}
 		for _, t := range poolTickets {
