@@ -1,278 +1,2325 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "description": "Resource Allocation and Management in Multi-Cluster project",
-    "title": "NamespaceManager API",
-    "termsOfService": "http://swagger.io/terms/",
-    "contact": {
-      "name": "API Support",
-      "url": "http://www.swagger.io/support",
-      "email": "support@swagger.io"
+    "swagger": "2.0",
+    "info": {
+        "description": "Resource Allocation and Management in Multi-Cluster project",
+        "title": "NamespaceManager API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
-    "license": {
-      "name": "Apache 2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    },
-    "version": "1.0"
-  },
-  "host": "localhost:8080",
-  "basePath": "/",
-  "paths": {
-    "/ns/nsCreate": {
-      "post": {
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "description": "Create a new namespace",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["namespaces"],
-        "summary": "Create namespace",
-        "parameters": [
-          {
-            "description": "Namespace data",
-            "name": "namespace",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/dtos.RequestNS"
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/ns/namespaceUsage/{ns_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve usage statistics for a specific namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get namespace usage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "ns_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Namespace usage data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.UsageDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Namespace Created",
-            "schema": {
-              "type": "string"
+        },
+        "/ns/namespaces/all/{project_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all namespaces belonging to a specific project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get namespaces by project ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "project_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of namespaces",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/dtos.NamespaceDTO"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
-          },
-          "400": {
-            "description": "Invalid input",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+        },
+        "/ns/namespaces/{ns_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve details of a specific namespace by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get namespace detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "ns_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Namespace details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.NamespaceDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
-          },
-          "409": {
-            "description": "Conflict error",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+        },
+        "/ns/pool/{pool_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve resource pool details by pool ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get resource pool detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pool ID",
+                        "name": "pool_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource pool details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.ResourcesPoolDetailDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
-          }
+        },
+        "/ns/projectUsage/{project_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve usage statistics for a specific project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get project usage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "project_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project usage data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.UsageDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/projects": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of all projects from the clearing house",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get all projects",
+                "responses": {
+                    "200": {
+                        "description": "List of projects",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/dtos.ProjectDTO"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/projects/{project_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve details of a specific project by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get project detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "project_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.ProjectDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/quota/{ns_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve quota information for a specific namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get quota by namespace ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "ns_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quota data (JSON from clearing house)",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/quotaUsage/{quota_id}/{ns_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve quota usage statistics for a specific quota in a namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get quota usage by namespace ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Quota ID",
+                        "name": "quota_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "ns_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quota usage data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/dtos.UsageDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/resource/{resource_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve details of a specific resource by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "Get resource detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resource_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all tickets owned by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get current user tickets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserTicketResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Request a new ticket from clearing house",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Request ticket",
+                "parameters": [
+                    {
+                        "description": "Ticket request payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RequestTicketDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created ticket",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/cancelTicket/{ticket_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Cancel a ticket by ticket ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Cancel ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket ID",
+                        "name": "ticket_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket cancelled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/delete": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Soft-delete selected tickets by IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Delete tickets",
+                "parameters": [
+                    {
+                        "description": "Ticket IDs",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.DeleteTicketsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tickets deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/getTickets/{namespace_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all tickets belonging to a namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get tickets by namespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "namespace_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserTicketResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/getTickets/{namespace_id}/{node_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve tickets in a namespace filtered by node ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get tickets by namespace and node",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "namespace_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Node ID",
+                        "name": "node_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserTicketResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/getUserTickets": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all tickets owned by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get current user tickets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserTicketResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/handleticket": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a ticket from callback payload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Handle ticket callback",
+                "parameters": [
+                    {
+                        "description": "Ticket callback payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateTicket"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/namespace/{namespace_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all tickets belonging to a namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get tickets by namespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "namespace_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserTicketResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/requestTicketToCH": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Request a new ticket from clearing house",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Request ticket",
+                "parameters": [
+                    {
+                        "description": "Ticket request payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RequestTicketDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created ticket",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/stopTask/{task_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Stop a running task by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Stop task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stop result",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/tasks": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all tasks for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get tasks",
+                "responses": {
+                    "200": {
+                        "description": "Tasks list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a task using selected ticket IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Create task from tickets",
+                "parameters": [
+                    {
+                        "description": "Task creation payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateTaskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/tasks/delete": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Soft-delete selected tasks by IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Delete tasks",
+                "parameters": [
+                    {
+                        "description": "Task IDs",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.DeleteTasksRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tasks deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/tasks/{task_id}/cancel": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Cancel a task by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Cancel task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No content body",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/tasks/{task_id}/stop": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Stop a running task by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Stop task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stop result",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/updateTicketStatusFromGlidelet": {
+            "post": {
+                "description": "Receive ticket status updates pushed from glidelet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Update ticket status from glidelet",
+                "parameters": [
+                    {
+                        "description": "Status update payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.StatusRes"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Statuses updated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/useTickets": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a task using selected ticket IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Create task from tickets",
+                "parameters": [
+                    {
+                        "description": "Task creation payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateTaskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ticket/{ticket_id}/cancel": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Cancel a ticket by ticket ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Cancel ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket ID",
+                        "name": "ticket_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket cancelled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/access-token": {
+            "get": {
+                "description": "Exchange OAuth code via clearing house and set access/refresh token cookies",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Exchange Google callback code for tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tokens set successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/auth/callback/google": {
+            "get": {
+                "description": "Handle Google OAuth callback with authorization code",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Google OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Authentication response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "302": {
+                        "description": "Redirect after successful login",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/auth/google": {
+            "get": {
+                "description": "Redirect user to Google OAuth authorization page",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Start Google OAuth login",
+                "responses": {
+                    "307": {
+                        "description": "Temporary redirect",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/auth/logout": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Logout user and clear session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "User logout",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/auth/refresh-token": {
+            "get": {
+                "description": "Refresh access token using refresh token cookie",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Refresh access token",
+                "responses": {
+                    "200": {
+                        "description": "Tokens refreshed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/login": {
+            "post": {
+                "description": "Login with username and password",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve authenticated user profile from access token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get current user profile",
+                "responses": {
+                    "200": {
+                        "description": "Current user profile",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/podStatus": {
+            "post": {
+                "description": "Receive pod status updates posted to users podStatus endpoint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Receive pod status payload",
+                "parameters": [
+                    {
+                        "description": "Pod status payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.StatusRes"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status received",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/register": {
+            "post": {
+                "description": "Register a new user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RegisterInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
-      }
     },
-    "/ns/nsList": {
-      "get": {
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "description": "Get list of namespaces for the authenticated user",
-        "produces": ["application/json"],
-        "tags": ["namespaces"],
-        "summary": "Get namespace list",
-        "responses": {
-          "200": {
-            "description": "List of namespaces",
-            "schema": {
-              "type": "object",
-              "additionalProperties": true
+    "definitions": {
+        "dtos.CreateTaskRequest": {
+            "type": "object",
+            "properties": {
+                "tickets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
             }
-          },
-          "409": {
-            "description": "Conflict error",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+        },
+        "dtos.CreateTicket": {
+            "type": "object",
+            "required": [
+                "glidelet_urn",
+                "lease",
+                "namespace_id",
+                "namespace_urn",
+                "redeem_timeout",
+                "signature",
+                "spec"
+            ],
+            "properties": {
+                "glidelet_urn": {
+                    "type": "string"
+                },
+                "lease": {
+                    "type": "string"
+                },
+                "namespace_id": {
+                    "type": "string"
+                },
+                "namespace_urn": {
+                    "type": "string"
+                },
+                "redeem_timeout": {
+                    "type": "string"
+                },
+                "reference_ticket_id": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpecListReq"
+                    }
+                }
             }
-          }
-        }
-      }
-    },
-    "/users/login": {
-      "post": {
-        "description": "Login with username and password",
-        "consumes": ["application/x-www-form-urlencoded"],
-        "produces": ["application/json"],
-        "tags": ["users"],
-        "summary": "User login",
-        "parameters": [
-          {
+        },
+        "dtos.DeleteTasksRequest": {
+            "type": "object",
+            "required": [
+                "task_ids"
+            ],
+            "properties": {
+                "task_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dtos.DeleteTicketsRequest": {
+            "type": "object",
+            "required": [
+                "ticket_ids"
+            ],
+            "properties": {
+                "ticket_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dtos.NamespaceDTO": {
+            "type": "object",
+            "properties": {
+                "credit": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace_members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.NamespaceMembers"
+                    }
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "quotas": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.NamespaceMembers": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.PodStatus": {
+            "type": "object",
+            "properties": {
+                "errorMsg": {
+                    "type": "string"
+                },
+                "podId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ProjectDTO": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.RegisterInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 2
+                }
+            }
+        },
+        "dtos.RequestTicketDTO": {
+            "type": "object",
+            "required": [
+                "duration",
+                "name",
+                "namespace_id",
+                "quota_id",
+                "resources"
+            ],
+            "properties": {
+                "duration": {
+                    "description": "in seconds",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace_id": {
+                    "type": "string"
+                },
+                "quota_id": {
+                    "type": "string"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_ticket_dtos.ResourceDTO"
+                    }
+                }
+            }
+        },
+        "dtos.ResourcesPoolDetailDTO": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpecListReq": {
+            "type": "object",
+            "required": [
+                "pool_id",
+                "resource",
+                "type"
+            ],
+            "properties": {
+                "pool_id": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpecResourceReq"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/models.ResourceUnitType"
+                }
+            }
+        },
+        "dtos.SpecResourceReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "quantity",
+                "unit"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.StatusRes": {
+            "type": "object",
+            "properties": {
+                "codeServerUrl": {
+                    "type": "string"
+                },
+                "hasError": {
+                    "type": "boolean"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.PodStatus"
+                    }
+                },
+                "ticketId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.UsageDTO": {
+            "type": "object",
+            "properties": {
+                "usage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.UsageDetail"
+                    }
+                }
+            }
+        },
+        "dtos.UsageDetail": {
+            "type": "object",
+            "properties": {
+                "quota": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "type_id": {
+                    "type": "string"
+                },
+                "usage": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.UserTicketResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "ticket": {
+                    "$ref": "#/definitions/models.GliderTicket"
+                }
+            }
+        },
+        "internal_ticket_dtos.ResourceDTO": {
+            "type": "object",
+            "required": [
+                "quantity",
+                "resource_id"
+            ],
+            "properties": {
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "resource_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GliderSpec": {
+            "type": "object",
+            "properties": {
+                "pool_id": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SpecResource"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/models.ResourceUnitType"
+                }
+            }
+        },
+        "models.GliderTicket": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "glidelet_name": {
+                    "type": "string"
+                },
+                "glidelet_urn": {
+                    "description": "resource_pool.URN (where to send request)",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ticket id",
+                    "type": "string"
+                },
+                "lease": {
+                    "description": "in seconds",
+                    "type": "integer"
+                },
+                "namespace_id": {
+                    "description": "namespace id",
+                    "type": "string"
+                },
+                "namespace_name": {
+                    "type": "string"
+                },
+                "node_display_name": {
+                    "type": "string"
+                },
+                "node_id": {
+                    "type": "string"
+                },
+                "node_name": {
+                    "type": "string"
+                },
+                "organization_name": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "description": "project id",
+                    "type": "string"
+                },
+                "project_name": {
+                    "type": "string"
+                },
+                "redeem_timeout": {
+                    "description": "in seconds",
+                    "type": "integer"
+                },
+                "reference_ticket_id": {
+                    "type": "string"
+                },
+                "resource_pool_id": {
+                    "type": "string"
+                },
+                "resource_pool_name": {
+                    "type": "string"
+                },
+                "spec": {
+                    "$ref": "#/definitions/models.GliderSpec"
+                }
+            }
+        },
+        "models.ResourceUnitType": {
             "type": "string",
-            "description": "Username",
-            "name": "username",
-            "in": "formData",
-            "required": true
-          },
-          {
-            "type": "string",
-            "description": "Password",
-            "name": "password",
-            "in": "formData",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+            "enum": [
+                "compute",
+                "compute",
+                "storage",
+                "network",
+                "service"
+            ],
+            "x-enum-varnames": [
+                "ResourceUnitTypeCPU",
+                "ResourceUnitCompute",
+                "ResourceUnitStorage",
+                "ResourceUnitNetwork",
+                "ResourceUnitService"
+            ]
+        },
+        "models.SpecResource": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "resource_id": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
             }
-          },
-          "401": {
-            "description": "Invalid credentials",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
+        },
+        "response.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
             }
-          },
-          "500": {
-            "description": "Internal server error",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          }
         }
-      }
     },
-    "/users/logout": {
-      "post": {
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "description": "Logout user and clear session",
-        "produces": ["application/json"],
-        "tags": ["users"],
-        "summary": "User logout",
-        "responses": {
-          "200": {
-            "description": "Logout successful",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          }
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
-      }
-    },
-    "/users/register": {
-      "post": {
-        "description": "Register a new user",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["users"],
-        "summary": "User registration",
-        "parameters": [
-          {
-            "description": "User registration data",
-            "name": "user",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/dtos.RegisterInput"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "User registered successfully",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          },
-          "409": {
-            "description": "User already exists",
-            "schema": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      }
     }
-  },
-  "definitions": {
-    "dtos.RegisterInput": {
-      "type": "object",
-      "required": ["email", "password", "username"],
-      "properties": {
-        "email": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string",
-          "minLength": 8
-        },
-        "username": {
-          "type": "string",
-          "maxLength": 30,
-          "minLength": 2
-        }
-      }
-    },
-    "dtos.RequestNS": {
-      "type": "object",
-      "properties": {
-        "priority": {
-          "type": "string"
-        },
-        "project": {
-          "type": "string"
-        },
-        "quota": {
-          "type": "string"
-        },
-        "resource_unit_urn": {
-          "type": "string"
-        },
-        "urn": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "securityDefinitions": {
-    "ApiKeyAuth": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header"
-    }
-  }
 }

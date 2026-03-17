@@ -28,6 +28,15 @@ func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandl
 	}
 }
 
+// Me godoc
+// @Summary      Get current user profile
+// @Description  Retrieve authenticated user profile from access token
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}  "Current user profile"
+// @Failure      401  {object}  response.ErrorResponse  "Unauthorized"
+// @Security     ApiKeyAuth
+// @Router       /users/me [get]
 func (h *UsersHandlers) Me() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userData := map[string]interface{}{}
@@ -48,6 +57,13 @@ func (h *UsersHandlers) Me() gin.HandlerFunc {
 	}
 }
 
+// LoginWithGoogle godoc
+// @Summary      Start Google OAuth login
+// @Description  Redirect user to Google OAuth authorization page
+// @Tags         users
+// @Produce      json
+// @Success      307  {string}  string  "Temporary redirect"
+// @Router       /users/auth/google [get]
 func (h *UsersHandlers) LoginWithGoogle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		url := h.usersUsecase.GenerateLoginURL("state-token")
@@ -55,6 +71,17 @@ func (h *UsersHandlers) LoginWithGoogle() gin.HandlerFunc {
 	}
 }
 
+// Callback godoc
+// @Summary      Google OAuth callback
+// @Description  Handle Google OAuth callback with authorization code
+// @Tags         users
+// @Produce      json
+// @Param        code  query     string  true  "Authorization code"
+// @Success      200   {object}  map[string]interface{}  "Authentication response"
+// @Success      302   {string}  string                  "Redirect after successful login"
+// @Failure      400   {object}  response.ErrorResponse  "Bad request"
+// @Failure      500   {object}  response.ErrorResponse  "Internal server error"
+// @Router       /users/auth/callback/google [get]
 func (h *UsersHandlers) Callback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
@@ -108,9 +135,9 @@ func (h *UsersHandlers) Callback() gin.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Param user body dtos.RegisterInput true "User registration data"
-// @Success 201 {object} map[string]string "User registered successfully"
-// @Failure 400 {object} map[string]string "Invalid input"
-// @Failure 409 {object} map[string]string "User already exists"
+// @Success 201 {object} map[string]string      "User registered successfully"
+// @Failure 400 {object} response.ErrorResponse "Invalid input"
+// @Failure 409 {object} response.ErrorResponse "User already exists"
 // @Router /users/register [post]
 func (h *UsersHandlers) Register() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -140,9 +167,9 @@ func (h *UsersHandlers) Register() gin.HandlerFunc {
 // @Produce json
 // @Param username formData string true "Username"
 // @Param password formData string true "Password"
-// @Success 200 {object} map[string]string "Login successful"
-// @Failure 401 {object} map[string]string "Invalid credentials"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Success 200 {object} map[string]string      "Login successful"
+// @Failure 401 {object} response.ErrorResponse "Invalid credentials"
+// @Failure 500 {object} response.ErrorResponse "Internal server error"
 // @Router /users/login [post]
 func (h *UsersHandlers) Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -173,9 +200,10 @@ func (h *UsersHandlers) Login() gin.HandlerFunc {
 // @Description Logout user and clear session
 // @Tags users
 // @Produce json
-// @Success 200 {object} map[string]string "Logout successful"
+// @Success 200 {object} map[string]string      "Logout successful"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Security ApiKeyAuth
-// @Router /users/logout [post]
+// @Router /users/auth/logout [get]
 func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get refresh token from cookie
@@ -201,6 +229,16 @@ func (h *UsersHandlers) Logout() gin.HandlerFunc {
 	}
 }
 
+// GetAccessTokenFromCode godoc
+// @Summary      Exchange Google callback code for tokens
+// @Description  Exchange OAuth code via clearing house and set access/refresh token cookies
+// @Tags         users
+// @Produce      json
+// @Param        code   query     string  true  "Authorization code"
+// @Param        state  query     string  false "OAuth state"
+// @Success      200    {object}  map[string]string      "Tokens set successfully"
+// @Failure      500    {object}  response.ErrorResponse "Internal server error"
+// @Router       /users/access-token [get]
 func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawQuery := c.Request.URL.RawQuery
@@ -256,6 +294,15 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 	}
 }
 
+// RefreshAccessToken godoc
+// @Summary      Refresh access token
+// @Description  Refresh access token using refresh token cookie
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  map[string]string      "Tokens refreshed successfully"
+// @Failure      401  {object}  response.ErrorResponse "Unauthorized"
+// @Failure      500  {object}  response.ErrorResponse "Internal server error"
+// @Router       /users/auth/refresh-token [get]
 func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		refreshTokenCookie, err := c.Cookie("refresh_token")

@@ -24,6 +24,15 @@ func NewNSHandler(NSUsecase interfaces.NSUsecase) interfaces.NSHandler {
 	return &NSHandlers{nsUsecase: NSUsecase}
 }
 
+// GetProjects godoc
+// @Summary      Get all projects
+// @Description  Retrieve a list of all projects from the clearing house
+// @Tags         namespaces
+// @Produce      json
+// @Success      200  {object}  map[string][]dtos.ProjectDTO  "List of projects"
+// @Failure      500  {object}  response.ErrorResponse         "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/projects [get]
 func (h NSHandlers) GetProjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		url := os.Getenv("CLEARINGHOUSE_URL") + "/projects/all"
@@ -50,6 +59,17 @@ func (h NSHandlers) GetProjects() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"projects": projects})
 	}
 }
+
+// GetProjectDetail godoc
+// @Summary      Get project detail
+// @Description  Retrieve details of a specific project by ID
+// @Tags         namespaces
+// @Produce      json
+// @Param        project_id  path      string  true  "Project ID"
+// @Success      200         {object}  map[string]dtos.ProjectDTO  "Project details"
+// @Failure      500         {object}  response.ErrorResponse       "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/projects/{project_id} [get]
 func (h NSHandlers) GetProjectDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
@@ -75,6 +95,17 @@ func (h NSHandlers) GetProjectDetail() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"project": project})
 	}
 }
+
+// GetNamespacesByProjectID godoc
+// @Summary      Get namespaces by project ID
+// @Description  Retrieve all namespaces belonging to a specific project
+// @Tags         namespaces
+// @Produce      json
+// @Param        project_id  path      string  true  "Project ID"
+// @Success      200         {object}  map[string][]dtos.NamespaceDTO  "List of namespaces"
+// @Failure      500         {object}  response.ErrorResponse           "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/namespaces/all/{project_id} [get]
 func (h NSHandlers) GetNamespacesByProjectID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
@@ -102,6 +133,17 @@ func (h NSHandlers) GetNamespacesByProjectID() gin.HandlerFunc {
 	}
 
 }
+
+// GetNamespacesDetail godoc
+// @Summary      Get namespace detail
+// @Description  Retrieve details of a specific namespace by ID
+// @Tags         namespaces
+// @Produce      json
+// @Param        ns_id  path      string  true  "Namespace ID"
+// @Success      200    {object}  map[string]dtos.NamespaceDTO  "Namespace details"
+// @Failure      500    {object}  response.ErrorResponse         "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/namespaces/{ns_id} [get]
 func (h NSHandlers) GetNamespacesDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
@@ -128,6 +170,18 @@ func (h NSHandlers) GetNamespacesDetail() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"namespace": namespace})
 	}
 }
+
+// GetQuotaByNamespaceID godoc
+// @Summary      Get quota by namespace ID
+// @Description  Retrieve quota information for a specific namespace
+// @Tags         namespaces
+// @Produce      json
+// @Param        ns_id  path      string  true  "Namespace ID"
+// @Success      200    {object}  object  "Quota data (JSON from clearing house)"
+// @Failure      400    {object}  response.ErrorResponse  "Bad request"
+// @Failure      500    {object}  response.ErrorResponse  "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/quota/{ns_id} [get]
 func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
@@ -150,6 +204,17 @@ func (h NSHandlers) GetQuotaByNamespaceID() gin.HandlerFunc {
 	}
 
 }
+
+// GetProjectUsageByProjectID godoc
+// @Summary      Get project usage
+// @Description  Retrieve usage statistics for a specific project
+// @Tags         namespaces
+// @Produce      json
+// @Param        project_id  path      string  true  "Project ID"
+// @Success      200         {object}  map[string]dtos.UsageDTO  "Project usage data"
+// @Failure      500         {object}  response.ErrorResponse     "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/projectUsage/{project_id} [get]
 func (h NSHandlers) GetProjectUsageByProjectID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		projectID := c.Param("project_id")
@@ -175,6 +240,17 @@ func (h NSHandlers) GetProjectUsageByProjectID() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"projectUsage": usage})
 	}
 }
+
+// GetNamespaceUsageByNamespaceID godoc
+// @Summary      Get namespace usage
+// @Description  Retrieve usage statistics for a specific namespace
+// @Tags         namespaces
+// @Produce      json
+// @Param        ns_id  path      string  true  "Namespace ID"
+// @Success      200    {object}  map[string]dtos.UsageDTO  "Namespace usage data"
+// @Failure      500    {object}  response.ErrorResponse     "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/namespaceUsage/{ns_id} [get]
 func (h NSHandlers) GetNamespaceUsageByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespaceID := c.Param("ns_id")
@@ -200,6 +276,18 @@ func (h NSHandlers) GetNamespaceUsageByNamespaceID() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"namespaceUsage": usage})
 	}
 }
+
+// GetQuotaUsageByNamespaceID godoc
+// @Summary      Get quota usage by namespace ID
+// @Description  Retrieve quota usage statistics for a specific quota in a namespace
+// @Tags         namespaces
+// @Produce      json
+// @Param        quota_id  path      string  true  "Quota ID"
+// @Param        ns_id     path      string  true  "Namespace ID"
+// @Success      200       {object}  map[string]dtos.UsageDTO  "Quota usage data"
+// @Failure      500       {object}  response.ErrorResponse     "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/quotaUsage/{quota_id}/{ns_id} [get]
 func (h NSHandlers) GetQuotaUsageByNamespaceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		quotaID := c.Param("quota_id")
@@ -226,6 +314,17 @@ func (h NSHandlers) GetQuotaUsageByNamespaceID() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"quotaUsage": usage})
 	}
 }
+
+// GetResource godoc
+// @Summary      Get resource detail
+// @Description  Retrieve details of a specific resource by ID
+// @Tags         namespaces
+// @Produce      json
+// @Param        resource_id  path      string  true  "Resource ID"
+// @Success      200          {object}  map[string]interface{}  "Resource details"
+// @Failure      500          {object}  response.ErrorResponse        "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/resource/{resource_id} [get]
 func (h NSHandlers) GetResource() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		resourceID := c.Param("resource_id")
@@ -252,6 +351,17 @@ func (h NSHandlers) GetResource() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"resource": resource})
 	}
 }
+
+// GetResourcesPoolDetail godoc
+// @Summary      Get resource pool detail
+// @Description  Retrieve resource pool details by pool ID
+// @Tags         namespaces
+// @Produce      json
+// @Param        pool_id  path      string  true  "Pool ID"
+// @Success      200      {object}  map[string]dtos.ResourcesPoolDetailDTO  "Resource pool details"
+// @Failure      500      {object}  response.ErrorResponse                   "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /ns/pool/{pool_id} [get]
 func (h NSHandlers) GetResourcesPoolDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		poolID := c.Param("pool_id")

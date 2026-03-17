@@ -1,5 +1,111 @@
 basePath: /
 definitions:
+  dtos.CreateTaskRequest:
+    properties:
+      tickets:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+    type: object
+  dtos.CreateTicket:
+    properties:
+      glidelet_urn:
+        type: string
+      lease:
+        type: string
+      namespace_id:
+        type: string
+      namespace_urn:
+        type: string
+      redeem_timeout:
+        type: string
+      reference_ticket_id:
+        type: string
+      signature:
+        type: string
+      spec:
+        items:
+          $ref: '#/definitions/dtos.SpecListReq'
+        type: array
+    required:
+    - glidelet_urn
+    - lease
+    - namespace_id
+    - namespace_urn
+    - redeem_timeout
+    - signature
+    - spec
+    type: object
+  dtos.DeleteTasksRequest:
+    properties:
+      task_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - task_ids
+    type: object
+  dtos.DeleteTicketsRequest:
+    properties:
+      ticket_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - ticket_ids
+    type: object
+  dtos.NamespaceDTO:
+    properties:
+      credit:
+        type: number
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      namespace_members:
+        items:
+          $ref: '#/definitions/dtos.NamespaceMembers'
+        type: array
+      project_id:
+        type: string
+      quotas:
+        type: string
+    type: object
+  dtos.NamespaceMembers:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    type: object
+  dtos.PodStatus:
+    properties:
+      errorMsg:
+        type: string
+      podId:
+        type: string
+      status:
+        type: string
+    type: object
+  dtos.ProjectDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+    type: object
   dtos.RegisterInput:
     properties:
       email:
@@ -12,22 +118,218 @@ definitions:
         minLength: 2
         type: string
     required:
-      - email
-      - password
-      - username
+    - email
+    - password
+    - username
     type: object
-  dtos.RequestNS:
+  dtos.RequestTicketDTO:
     properties:
-      priority:
+      duration:
+        description: in seconds
+        minimum: 1
+        type: integer
+      name:
         type: string
-      project:
+      namespace_id:
         type: string
+      quota_id:
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/internal_ticket_dtos.ResourceDTO'
+        type: array
+    required:
+    - duration
+    - name
+    - namespace_id
+    - quota_id
+    - resources
+    type: object
+  dtos.ResourcesPoolDetailDTO:
+    properties:
+      display_name:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+    type: object
+  dtos.SpecListReq:
+    properties:
+      pool_id:
+        type: string
+      resource:
+        items:
+          $ref: '#/definitions/dtos.SpecResourceReq'
+        type: array
+      type:
+        $ref: '#/definitions/models.ResourceUnitType'
+    required:
+    - pool_id
+    - resource
+    - type
+    type: object
+  dtos.SpecResourceReq:
+    properties:
+      name:
+        type: string
+      quantity:
+        type: integer
+      unit:
+        type: string
+    required:
+    - name
+    - quantity
+    - unit
+    type: object
+  dtos.StatusRes:
+    properties:
+      codeServerUrl:
+        type: string
+      hasError:
+        type: boolean
+      password:
+        type: string
+      status:
+        items:
+          $ref: '#/definitions/dtos.PodStatus'
+        type: array
+      ticketId:
+        type: string
+    type: object
+  dtos.UsageDTO:
+    properties:
+      usage:
+        items:
+          $ref: '#/definitions/dtos.UsageDetail'
+        type: array
+    type: object
+  dtos.UsageDetail:
+    properties:
       quota:
+        type: integer
+      type:
         type: string
-      resource_unit_urn:
+      type_id:
         type: string
-      urn:
+      usage:
+        type: integer
+    type: object
+  dtos.UserTicketResponse:
+    properties:
+      id:
         type: string
+      name:
+        type: string
+      owner_name:
+        type: string
+      status:
+        type: string
+      ticket:
+        $ref: '#/definitions/models.GliderTicket'
+    type: object
+  internal_ticket_dtos.ResourceDTO:
+    properties:
+      quantity:
+        minimum: 0
+        type: integer
+      resource_id:
+        type: string
+    required:
+    - quantity
+    - resource_id
+    type: object
+  models.GliderSpec:
+    properties:
+      pool_id:
+        type: string
+      resource:
+        items:
+          $ref: '#/definitions/models.SpecResource'
+        type: array
+      type:
+        $ref: '#/definitions/models.ResourceUnitType'
+    type: object
+  models.GliderTicket:
+    properties:
+      created_at:
+        type: string
+      glidelet_name:
+        type: string
+      glidelet_urn:
+        description: resource_pool.URN (where to send request)
+        type: string
+      id:
+        description: ticket id
+        type: string
+      lease:
+        description: in seconds
+        type: integer
+      namespace_id:
+        description: namespace id
+        type: string
+      namespace_name:
+        type: string
+      node_display_name:
+        type: string
+      node_id:
+        type: string
+      node_name:
+        type: string
+      organization_name:
+        type: string
+      project_id:
+        description: project id
+        type: string
+      project_name:
+        type: string
+      redeem_timeout:
+        description: in seconds
+        type: integer
+      reference_ticket_id:
+        type: string
+      resource_pool_id:
+        type: string
+      resource_pool_name:
+        type: string
+      spec:
+        $ref: '#/definitions/models.GliderSpec'
+    type: object
+  models.ResourceUnitType:
+    enum:
+    - compute
+    - compute
+    - storage
+    - network
+    - service
+    type: string
+    x-enum-varnames:
+    - ResourceUnitTypeCPU
+    - ResourceUnitCompute
+    - ResourceUnitStorage
+    - ResourceUnitNetwork
+    - ResourceUnitService
+  models.SpecResource:
+    properties:
+      name:
+        type: string
+      quantity:
+        type: integer
+      resource_id:
+        type: string
+      unit:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      status:
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -43,91 +345,872 @@ info:
   title: NamespaceManager API
   version: "1.0"
 paths:
-  /ns/nsCreate:
-    post:
-      consumes:
-        - application/json
-      description: Create a new namespace
+  /ns/namespaceUsage/{ns_id}:
+    get:
+      description: Retrieve usage statistics for a specific namespace
       parameters:
-        - description: Namespace data
-          in: body
-          name: namespace
-          required: true
-          schema:
-            $ref: "#/definitions/dtos.RequestNS"
+      - description: Namespace ID
+        in: path
+        name: ns_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
-          description: Namespace Created
-          schema:
-            type: string
-        "400":
-          description: Invalid input
+          description: Namespace usage data
           schema:
             additionalProperties:
-              type: string
+              $ref: '#/definitions/dtos.UsageDTO'
             type: object
-        "409":
-          description: Conflict error
+        "500":
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       security:
-        - ApiKeyAuth: []
-      summary: Create namespace
+      - ApiKeyAuth: []
+      summary: Get namespace usage
       tags:
-        - namespaces
-  /ns/nsList:
+      - namespaces
+  /ns/namespaces/{ns_id}:
     get:
-      description: Get list of namespaces for the authenticated user
+      description: Retrieve details of a specific namespace by ID
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: ns_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
+      responses:
+        "200":
+          description: Namespace details
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dtos.NamespaceDTO'
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get namespace detail
+      tags:
+      - namespaces
+  /ns/namespaces/all/{project_id}:
+    get:
+      description: Retrieve all namespaces belonging to a specific project
+      parameters:
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: List of namespaces
           schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict error
-          schema:
             additionalProperties:
-              type: string
+              items:
+                $ref: '#/definitions/dtos.NamespaceDTO'
+              type: array
             type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       security:
-        - ApiKeyAuth: []
-      summary: Get namespace list
+      - ApiKeyAuth: []
+      summary: Get namespaces by project ID
       tags:
-        - namespaces
-  /users/login:
-    post:
-      consumes:
-        - application/x-www-form-urlencoded
-      description: Login with username and password
+      - namespaces
+  /ns/pool/{pool_id}:
+    get:
+      description: Retrieve resource pool details by pool ID
       parameters:
-        - description: Username
-          in: formData
-          name: username
-          required: true
-          type: string
-        - description: Password
-          in: formData
-          name: password
-          required: true
-          type: string
+      - description: Pool ID
+        in: path
+        name: pool_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
-          description: Login successful
+          description: Resource pool details
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dtos.ResourcesPoolDetailDTO'
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get resource pool detail
+      tags:
+      - namespaces
+  /ns/projectUsage/{project_id}:
+    get:
+      description: Retrieve usage statistics for a specific project
+      parameters:
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project usage data
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dtos.UsageDTO'
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get project usage
+      tags:
+      - namespaces
+  /ns/projects:
+    get:
+      description: Retrieve a list of all projects from the clearing house
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of projects
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/dtos.ProjectDTO'
+              type: array
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all projects
+      tags:
+      - namespaces
+  /ns/projects/{project_id}:
+    get:
+      description: Retrieve details of a specific project by ID
+      parameters:
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project details
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dtos.ProjectDTO'
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get project detail
+      tags:
+      - namespaces
+  /ns/quota/{ns_id}:
+    get:
+      description: Retrieve quota information for a specific namespace
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: ns_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Quota data (JSON from clearing house)
+          schema:
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get quota by namespace ID
+      tags:
+      - namespaces
+  /ns/quotaUsage/{quota_id}/{ns_id}:
+    get:
+      description: Retrieve quota usage statistics for a specific quota in a namespace
+      parameters:
+      - description: Quota ID
+        in: path
+        name: quota_id
+        required: true
+        type: string
+      - description: Namespace ID
+        in: path
+        name: ns_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Quota usage data
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dtos.UsageDTO'
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get quota usage by namespace ID
+      tags:
+      - namespaces
+  /ns/resource/{resource_id}:
+    get:
+      description: Retrieve details of a specific resource by ID
+      parameters:
+      - description: Resource ID
+        in: path
+        name: resource_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Resource details
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get resource detail
+      tags:
+      - namespaces
+  /ticket:
+    get:
+      description: Retrieve all tickets owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.UserTicketResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user tickets
+      tags:
+      - tickets
+    post:
+      consumes:
+      - application/json
+      description: Request a new ticket from clearing house
+      parameters:
+      - description: Ticket request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RequestTicketDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created ticket
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Request ticket
+      tags:
+      - tickets
+  /ticket/{ticket_id}/cancel:
+    patch:
+      description: Cancel a ticket by ticket ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: ticket_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket cancelled
           schema:
             additionalProperties:
               type: string
             type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
-          description: Invalid credentials
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel ticket
+      tags:
+      - tickets
+  /ticket/cancelTicket/{ticket_id}:
+    get:
+      description: Cancel a ticket by ticket ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: ticket_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket cancelled
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel ticket
+      tags:
+      - tickets
+  /ticket/delete:
+    patch:
+      consumes:
+      - application/json
+      description: Soft-delete selected tickets by IDs
+      parameters:
+      - description: Ticket IDs
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.DeleteTicketsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tickets deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete tickets
+      tags:
+      - tickets
+  /ticket/getTickets/{namespace_id}:
+    get:
+      description: Retrieve all tickets belonging to a namespace
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: namespace_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.UserTicketResponse'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get tickets by namespace
+      tags:
+      - tickets
+  /ticket/getTickets/{namespace_id}/{node_id}:
+    get:
+      description: Retrieve tickets in a namespace filtered by node ID
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: namespace_id
+        required: true
+        type: string
+      - description: Node ID
+        in: path
+        name: node_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.UserTicketResponse'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get tickets by namespace and node
+      tags:
+      - tickets
+  /ticket/getUserTickets:
+    get:
+      description: Retrieve all tickets owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.UserTicketResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user tickets
+      tags:
+      - tickets
+  /ticket/handleticket:
+    post:
+      consumes:
+      - application/json
+      description: Create a ticket from callback payload
+      parameters:
+      - description: Ticket callback payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateTicket'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Handle ticket callback
+      tags:
+      - tickets
+  /ticket/namespace/{namespace_id}:
+    get:
+      description: Retrieve all tickets belonging to a namespace
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: namespace_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.UserTicketResponse'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get tickets by namespace
+      tags:
+      - tickets
+  /ticket/requestTicketToCH:
+    post:
+      consumes:
+      - application/json
+      description: Request a new ticket from clearing house
+      parameters:
+      - description: Ticket request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RequestTicketDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created ticket
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Request ticket
+      tags:
+      - tickets
+  /ticket/stopTask/{task_id}:
+    delete:
+      description: Stop a running task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stop result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Stop task
+      tags:
+      - tasks
+  /ticket/tasks:
+    get:
+      description: Retrieve all tasks for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tasks list
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get tasks
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Create a task using selected ticket IDs
+      parameters:
+      - description: Task creation payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create task from tickets
+      tags:
+      - tasks
+  /ticket/tasks/{task_id}/cancel:
+    patch:
+      description: Cancel a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: No content body
+          schema:
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel task
+      tags:
+      - tasks
+  /ticket/tasks/{task_id}/stop:
+    patch:
+      description: Stop a running task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stop result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Stop task
+      tags:
+      - tasks
+  /ticket/tasks/delete:
+    patch:
+      consumes:
+      - application/json
+      description: Soft-delete selected tasks by IDs
+      parameters:
+      - description: Task IDs
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.DeleteTasksRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tasks deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete tasks
+      tags:
+      - tasks
+  /ticket/updateTicketStatusFromGlidelet:
+    post:
+      consumes:
+      - application/json
+      description: Receive ticket status updates pushed from glidelet
+      parameters:
+      - description: Status update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dtos.StatusRes'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Statuses updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
           schema:
             additionalProperties:
               type: string
@@ -138,14 +1221,127 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: User login
+      summary: Update ticket status from glidelet
       tags:
-        - users
-  /users/logout:
+      - tickets
+  /ticket/useTickets:
     post:
+      consumes:
+      - application/json
+      description: Create a task using selected ticket IDs
+      parameters:
+      - description: Task creation payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create task from tickets
+      tags:
+      - tasks
+  /users/access-token:
+    get:
+      description: Exchange OAuth code via clearing house and set access/refresh token
+        cookies
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth state
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens set successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Exchange Google callback code for tokens
+      tags:
+      - users
+  /users/auth/callback/google:
+    get:
+      description: Handle Google OAuth callback with authorization code
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication response
+          schema:
+            additionalProperties: true
+            type: object
+        "302":
+          description: Redirect after successful login
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Google OAuth callback
+      tags:
+      - users
+  /users/auth/google:
+    get:
+      description: Redirect user to Google OAuth authorization page
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary redirect
+          schema:
+            type: string
+      summary: Start Google OAuth login
+      tags:
+      - users
+  /users/auth/logout:
+    get:
       description: Logout user and clear session
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: Logout successful
@@ -153,25 +1349,137 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: User logout
       tags:
-        - users
+      - users
+  /users/auth/refresh-token:
+    get:
+      description: Refresh access token using refresh token cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Login with username and password
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: User login
+      tags:
+      - users
+  /users/me:
+    get:
+      description: Retrieve authenticated user profile from access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Current user profile
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user profile
+      tags:
+      - users
+  /users/podStatus:
+    post:
+      consumes:
+      - application/json
+      description: Receive pod status updates posted to users podStatus endpoint
+      parameters:
+      - description: Pod status payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dtos.StatusRes'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status received
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Receive pod status payload
+      tags:
+      - users
   /users/register:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Register a new user
       parameters:
-        - description: User registration data
-          in: body
-          name: user
-          required: true
-          schema:
-            $ref: "#/definitions/dtos.RegisterInput"
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RegisterInput'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: User registered successfully
@@ -182,18 +1490,14 @@ paths:
         "400":
           description: Invalid input
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "409":
           description: User already exists
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: User registration
       tags:
-        - users
+      - users
 securityDefinitions:
   ApiKeyAuth:
     in: header

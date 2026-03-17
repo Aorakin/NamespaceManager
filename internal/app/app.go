@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/NamespaceManager/config"
@@ -71,8 +72,11 @@ func (s *App) Run() error {
 		return err
 	}
 
-	// Serve Swagger UI
-	s.gin.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Do not expose Swagger docs in production.
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	if env != "prod" && env != "production" {
+		s.gin.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	serverURL := fmt.Sprintf(":%s", "8080")
 	return s.gin.Run(serverURL)
