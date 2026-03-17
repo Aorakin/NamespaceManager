@@ -40,14 +40,15 @@ func NewApp(postgresDB *gorm.DB) *App {
 			if err != nil {
 				return false
 			}
-			host := u.Host
+			// Use Hostname() instead of Host to strip the port (e.g. from ":8080" or ":443")
+			hostname := u.Hostname()
 
-			if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") {
+			if strings.HasPrefix(hostname, "localhost") || strings.HasPrefix(hostname, "127.0.0.1") {
 				return true
 			}
 
 			// Allow all subdomains of onepointfive.life
-			return strings.HasSuffix(host, "onepointfive.life")
+			return strings.HasSuffix(hostname, "onepointfive.life")
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
@@ -71,7 +72,7 @@ func (s *App) Run() error {
 	docs.SwaggerInfo.Title = "ClearingHouse API"
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.BasePath = "/"
-	docs.SwaggerInfo.Schemes = []string{"http"}
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	docs.SwaggerInfo.Host = "" // Leave empty to dynamically use the browser's current host
 
 	if err := s.MapHandlers(); err != nil {
