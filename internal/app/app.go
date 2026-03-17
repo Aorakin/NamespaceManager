@@ -42,6 +42,10 @@ func NewApp(postgresDB *gorm.DB) *App {
 			}
 			host := u.Host
 
+			if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") {
+				return true
+			}
+
 			// Allow all subdomains of onepointfive.life
 			return strings.HasSuffix(host, "onepointfive.life")
 		},
