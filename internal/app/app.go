@@ -67,6 +67,7 @@ func (s *App) Run() error {
 	docs.SwaggerInfo.Title = "ClearingHouse API"
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http"}
 
 	if err := s.MapHandlers(); err != nil {
 		return err
