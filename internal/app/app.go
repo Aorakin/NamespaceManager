@@ -72,6 +72,7 @@ func (s *App) Run() error {
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
+	docs.SwaggerInfo.Host = "" // Leave empty to dynamically use the browser's current host
 
 	if err := s.MapHandlers(); err != nil {
 		return err
