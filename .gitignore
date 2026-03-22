@@ -41,3 +41,9 @@ docker-compose.override.yml
 /tmp/*
 
 *.pem
+
+docs/erd_tables
+docs/sequence_diagram
+docs/sequence_diagrams
+docs/erd_models.dbml
+docs/namespace_manager.zip
