@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/NamespaceManager/internal/models"
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -15,10 +15,10 @@ import (
 var DB *gorm.DB
 
 func InitDataBase() (*gorm.DB, error) {
-	err := godotenv.Load()
-	if err != nil {
-		return nil, fmt.Errorf("Error loading .env file :%v", err)
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error loading .env file :%v", err)
+	// }
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -27,7 +27,7 @@ func InitDataBase() (*gorm.DB, error) {
 		os.Getenv("DB_NAME"),
 	)
 
-	DB, err = gorm.Open(postgres.Open(connStr), &gorm.Config{
+	DB, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info), // Enable logging
 	})
 	if err != nil {

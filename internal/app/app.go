@@ -47,6 +47,10 @@ func NewApp(postgresDB *gorm.DB) *App {
 				return true
 			}
 
+			if strings.HasSuffix(hostname, "cloud.ce.kmitl.ac.th") {
+				return true
+			}
+
 			// Allow all subdomains of onepointfive.life
 			return strings.HasSuffix(hostname, "onepointfive.life")
 		},
