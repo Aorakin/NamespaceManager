@@ -260,6 +260,13 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 		}
 		if status != http.StatusOK {
 			log.Printf("auth service returned status %d: %s", status, string(body))
+			var errResp map[string]interface{}
+			if err := json.Unmarshal(body, &errResp); err == nil {
+				if errMsg, ok := errResp["error"].(string); ok {
+					c.JSON(response.ErrorResponseBuilder(apiError.NewApiError(status, "Authentication failed", errMsg)))
+					return
+				}
+			}
 			c.JSON(response.ErrorResponseBuilder(apiError.NewApiError(status, "Authentication failed", "Failed to authenticate, please try again")))
 			return
 		}
