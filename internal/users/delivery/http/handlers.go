@@ -28,6 +28,14 @@ func NewUsersHandler(usersUsecase interfaces.UsersUsecase) interfaces.UsersHandl
 	}
 }
 
+func getEnv(key string, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 // Me godoc
 // @Summary      Get current user profile
 // @Description  Retrieve authenticated user profile from access token
@@ -221,9 +229,10 @@ func (h *UsersHandlers) Logout() gin.HandlerFunc {
 		}
 
 		// Clear the access token cookie
-		c.SetCookie("access_token", "", -1, "/", ".onepointfive.life", true, true)
+		prodCookieDomain := getEnv("AUTH_COOKIE_DOMAIN", ".onepointfive.life")
+		c.SetCookie("access_token", "", -1, "/", prodCookieDomain, true, true)
 		// Clear the refresh token cookie
-		c.SetCookie("refresh_token", "", -1, "/users/auth", ".onepointfive.life", true, true)
+		c.SetCookie("refresh_token", "", -1, "/users/auth", prodCookieDomain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 	}
@@ -287,8 +296,9 @@ func (h *UsersHandlers) GetAccessTokenFromCode() gin.HandlerFunc {
 			return
 		}
 
-		c.SetCookie("access_token", accessToken, 7*24*3600, "/", ".onepointfive.life", true, true)
-		c.SetCookie("refresh_token", refreshToken, 7*24*3600, "/users/auth", ".onepointfive.life", true, true)
+		prodCookieDomain := getEnv("AUTH_COOKIE_DOMAIN", ".onepointfive.life")
+		c.SetCookie("access_token", accessToken, 7*24*3600, "/", prodCookieDomain, true, true)
+		c.SetCookie("refresh_token", refreshToken, 7*24*3600, "/users/auth", prodCookieDomain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens set successfully"})
 	}
@@ -335,7 +345,8 @@ func (h *UsersHandlers) RefreshAccessToken() gin.HandlerFunc {
 			return
 		}
 		// c.SetCookie("access_token", accessToken, 3600, "/", "localhost", true, true)
-		c.SetCookie("access_token", accessToken, 7*24*3600, "/", ".onepointfive.life", true, true)
+		prodCookieDomain := getEnv("AUTH_COOKIE_DOMAIN", ".onepointfive.life")
+		c.SetCookie("access_token", accessToken, 7*24*3600, "/", prodCookieDomain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Tokens refreshed successfully"})
 	}
