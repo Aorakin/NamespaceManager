@@ -1730,50 +1730,6 @@
                 }
             }
         },
-        "/users/podStatus": {
-            "post": {
-                "description": "Receive pod status updates posted to users podStatus endpoint",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Receive pod status payload",
-                "parameters": [
-                    {
-                        "description": "Pod status payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.StatusRes"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Status received",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/users/register": {
             "post": {
                 "description": "Register a new user",
